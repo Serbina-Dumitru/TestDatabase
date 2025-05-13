@@ -14,16 +14,19 @@ namespace DbFunctionality
         _context.Users.Add(new User
             {
             Username = "test",
+            Password = "lolkek",
             Email = "a@a.a",
             IsOnline = false,
             SessionToken = "",
             SessionTokenExpirationDate = DateTime.Now,
             UserProfilePicturePath = "./test"
             });
+        _context.SaveChanges();
         _context.Chat.Add(new Chat
             {
             ChatName = "First Chat",
             });
+        _context.SaveChanges();
         _context.Messages.Add(new Message
             {
             UserID = 1,
@@ -33,11 +36,13 @@ namespace DbFunctionality
             IsSeen = false,
             IsFile = false,
             });
+        _context.SaveChanges();
         _context.UsersInChat.Add(new UsersInChat
             {
             ChatID = 1,
             UserID = 1,
             });
+        _context.SaveChanges();
 
         _context.Notifications.Add(new Notification
             {
@@ -45,6 +50,7 @@ namespace DbFunctionality
             Content = "new notification",
             Timestamp = DateTime.Now,
             });
+        _context.SaveChanges();
 
         _context.Contact.Add(new Contact
             {

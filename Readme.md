@@ -1,7 +1,8 @@
 # Proof of concept 
 
 ## Idea
-A database created in [C#](https://learn.microsoft.com/en-us/dotnet/csharp/) with [Entity Framework](https://learn.microsoft.com/en-us/aspnet/entity-framework) and [Fluent API](https://learn.microsoft.com/en-us/ef/ef6/modeling/code-first/fluent/types-and-properties). That is meant to hold information for a messenger app.
+A server aplication written in [C#](https://learn.microsoft.com/en-us/dotnet/csharp/) that is meant to receive and send data with [Rest API](https://en.wikipedia.org/wiki/Overview_of_RESTful_API_Description_Languages).
+It has a database created with [Entity Framework](https://learn.microsoft.com/en-us/aspnet/entity-framework) and [Fluent API](https://learn.microsoft.com/en-us/ef/ef6/modeling/code-first/fluent/types-and-properties) that is meant to hold information for a messenger app.
 
 ## Database schema
 ![database schema](./Images/Database_Schema.png)

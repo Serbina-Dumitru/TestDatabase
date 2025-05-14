@@ -41,7 +41,7 @@ app.MapControllerRoute(
       string generatingToken = "SomeRandomTokenThatShouldBeGenerated";
       user.SessionToken = generatingToken;
       user.SessionTokenExpirationDate = DateTime.Now.AddDays(1);
-      try{ await _context.SaveChangesAsync() }
+      try{ await _context.SaveChangesAsync(); }
       catch(DbUpdateException){
         return "Something went wrong, unable to update the database, contact the developer.";
       }

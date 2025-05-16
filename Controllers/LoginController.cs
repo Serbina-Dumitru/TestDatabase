@@ -9,7 +9,7 @@ namespace TestDatabase.Controllers
     public class LoginController : ControllerBase
     {
         public Context context = new Context();
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginInfo userLoginInfo)
         {
             if (string.IsNullOrWhiteSpace(userLoginInfo.Username) || string.IsNullOrWhiteSpace(userLoginInfo.Password))
@@ -27,9 +27,41 @@ namespace TestDatabase.Controllers
 
             return Ok(new { status = "success", data = new { user } });
         }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] NewUserInfo newUserInfo){
+            if (string.IsNullOrWhiteSpace(newUserInfo.Username) ||
+                string.IsNullOrWhiteSpace(newUserInfo.Password) || 
+                string.IsNullOrWhiteSpace(newUserInfo.Email))
+            {
+                return BadRequest(new { status = "error", 
+                                  error = "Username, password, and email must not be empty." });
+            }
+            if(await context.Users.
+                FirstOrDefaultAsync(u => u.Username == newUserInfo.Username) != null){
+                return Conflict(new {status = "error", 
+                                     error = "A user with this username already exists."});
+            }
+            User user = new User(){
+                Username = newUserInfo.Username,
+                Password = newUserInfo.Password,
+                Email = newUserInfo.Email,
+                IsOnline = false,
+                SessionToken = "test",
+                SessionTokenExpirationDate = DateTime.Now.AddDays(30),
+                UserProfilePicturePath = "./test"
+                };
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
+            return Created();
+        }
         public class UserLoginInfo{
             public string Username {get; set;}
             public string Password {get; set;}
+        }
+        public class NewUserInfo{
+            public string Username {get; set;}
+            public string Password {get;set;}
+            public string Email {get; set;}
         }
         [HttpGet("GetAllUsers")]
         public IActionResult GetAllUsers(){

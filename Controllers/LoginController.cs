@@ -9,6 +9,8 @@ namespace TestDatabase.Controllers
     public class LoginController : ControllerBase
     {
         public Context context = new Context();
+        Random random = new Random();
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginInfo userLoginInfo)
         {
@@ -44,7 +46,10 @@ namespace TestDatabase.Controllers
             }
 
             if (user.SessionTokenExpirationDate < DateTime.Now){
-                return Unauthorized(new { status = "error", error = "expired session token" });   
+                user.SessionToken = user.Username+random.Next(1000, 9999);
+                user.SessionTokenExpirationDate = DateTime.Now.AddDays(30);
+                context.Users.Update(user);
+                context.SaveChanges();
             }
             return Ok(new { status = "success", data = new { user } });
         }
@@ -62,7 +67,6 @@ namespace TestDatabase.Controllers
                 return Conflict(new {status = "error", 
                                      error = "A user with this username already exists."});
             }
-            Random random = new Random();
             User user = new User(){
                 Username = newUserInfo.Username,
                 Password = newUserInfo.Password,
@@ -87,24 +91,6 @@ namespace TestDatabase.Controllers
             public string Username {get; set;}
             public string Password {get;set;}
             public string Email {get; set;}
-        }
-        [HttpGet("GetAllUsers")]
-        public IActionResult GetAllUsers(){
-                using(var _context = new Context()){
-            var users =  _context.Users
-            .Include(u => u.SentMessages)
-            .Include(u => u.Notifications)
-            .Include(u => u.UsersInChats).ThenInclude(uc => uc.Chat)
-            .Include(u => u.Contacts).ThenInclude(c => c.ContactUser)
-            .Include(u => u.ContactedBy)
-            .ToList();
-            string res = JsonConvert.SerializeObject(users, Formatting.Indented,
-            new JsonSerializerSettings()
-            { 
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            });
-            return Ok(new {status = "OK", data = res});
-            }
         }
     }    
 }

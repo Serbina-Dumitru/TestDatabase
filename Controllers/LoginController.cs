@@ -25,10 +25,10 @@ namespace TestDatabase.Controllers
         .ToList();
       string res = JsonConvert.SerializeObject(users, Formatting.Indented,
           new JsonSerializerSettings()
-          { 
+          {
           ReferenceLoopHandling = ReferenceLoopHandling.Ignore
           });
       return Ok(new {status = "OK", data = res});
     }
-  }    
+  }
 }

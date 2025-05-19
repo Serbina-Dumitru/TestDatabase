@@ -1,4 +1,4 @@
-﻿using DbFunctionality;
+using DbFunctionality;
 using Microsoft.EntityFrameworkCore;
 using TestDatabase;
 using Newtonsoft.Json;
@@ -12,6 +12,14 @@ public class Program
     builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"),ServiceLifetime.Scoped);
 
     var app = builder.Build();
+#if DEBUG
+    using (var scope = app.Services.CreateScope())
+    {
+      var services = scope.ServiceProvider;
+      var dbContext = services.GetRequiredService<Context>();
+      Context.Seed(dbContext);
+    }
+#endif
     app.MapControllers();
     app.UseHttpsRedirection();
 
@@ -19,9 +27,6 @@ public class Program
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}");
 
-
-    DbFunctionalityClass.FillWithData();
     app.Run();
   }
-
 }

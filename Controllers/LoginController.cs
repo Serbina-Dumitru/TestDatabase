@@ -27,6 +27,24 @@ namespace TestDatabase.Controllers
 
             return Ok(new { status = "success", data = new { user } });
         }
+        [HttpPost("token")]
+        public async Task<IActionResult> Token([FromBody] UserTokenInfo userTokenInfo)
+        {
+            if (string.IsNullOrWhiteSpace(userTokenInfo.SessionToken))
+            {
+                return BadRequest(new { status = "error", error = "empty data" });
+            }
+
+            var user = await context.Users
+                .FirstOrDefaultAsync(u => u.SessionToken == userTokenInfo.SessionToken);
+
+            if (user == null)
+            {
+                return Unauthorized(new { status = "error", error = "user not found" });
+            }
+
+            return Ok(new { status = "success", data = new { user } });
+        }
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] NewUserInfo newUserInfo){
             if (string.IsNullOrWhiteSpace(newUserInfo.Username) ||
@@ -53,6 +71,9 @@ namespace TestDatabase.Controllers
             await context.Users.AddAsync(user);
             await context.SaveChangesAsync();
             return Created();
+        }
+        public class UserTokenInfo{
+            public string SessionToken {get; set;}
         }
         public class UserLoginInfo{
             public string Username {get; set;}

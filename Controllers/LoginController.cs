@@ -59,12 +59,13 @@ namespace TestDatabase.Controllers
                 return Conflict(new {status = "error", 
                                      error = "A user with this username already exists."});
             }
+            Random random = new Random();
             User user = new User(){
                 Username = newUserInfo.Username,
                 Password = newUserInfo.Password,
                 Email = newUserInfo.Email,
                 IsOnline = false,
-                SessionToken = "test",
+                SessionToken = newUserInfo.Username+random.Next(1000, 9999),
                 SessionTokenExpirationDate = DateTime.Now.AddDays(30),
                 UserProfilePicturePath = "./test"
                 };

@@ -43,7 +43,7 @@ namespace TestDatabase.Controllers
                 return Unauthorized(new { status = "error", error = "user not found" });
             }
 
-            if (user.SessionTokenExpirationDate > DateTime.Now){
+            if (user.SessionTokenExpirationDate < DateTime.Now){
                 return Unauthorized(new { status = "error", error = "expired session token" });   
             }
             return Ok(new { status = "success", data = new { user } });

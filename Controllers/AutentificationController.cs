@@ -6,7 +6,7 @@ namespace TestDatabase.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class LoginController : ControllerBase
+    public class AutentificationController : ControllerBase
     {
         private readonly Context _context;
         public AutentificationController(Context context)
@@ -23,7 +23,7 @@ namespace TestDatabase.Controllers
                 return BadRequest(new { status = "error", error = "empty data" });
             }
 
-            var user = await context.Users
+            var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == userLoginInfo.Username && u.Password == userLoginInfo.Password);
 
             if (user == null)
@@ -41,7 +41,7 @@ namespace TestDatabase.Controllers
                 return BadRequest(new { status = "error", error = "empty data" });
             }
 
-            var user = await context.Users
+            var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.SessionToken == userTokenInfo.SessionToken);
 
             if (user == null)
@@ -52,23 +52,23 @@ namespace TestDatabase.Controllers
             if (user.SessionTokenExpirationDate < DateTime.Now){
                 user.SessionToken = user.Username+random.Next(1000, 9999);
                 user.SessionTokenExpirationDate = DateTime.Now.AddDays(30);
-                context.Users.Update(user);
-                context.SaveChanges();
+                _context.Users.Update(user);
+                _context.SaveChanges();
             }
             return Ok(new { status = "success", data = new { user } });
         }
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] NewUserInfo newUserInfo){
             if (string.IsNullOrWhiteSpace(newUserInfo.Username) ||
-                string.IsNullOrWhiteSpace(newUserInfo.Password) || 
+                string.IsNullOrWhiteSpace(newUserInfo.Password) ||
                 string.IsNullOrWhiteSpace(newUserInfo.Email))
             {
-                return BadRequest(new { status = "error", 
+                return BadRequest(new { status = "error",
                                   error = "Username, password, and email must not be empty." });
             }
-            if(await context.Users.
+            if(await _context.Users.
                 FirstOrDefaultAsync(u => u.Username == newUserInfo.Username) != null){
-                return Conflict(new {status = "error", 
+                return Conflict(new {status = "error",
                                      error = "A user with this username already exists."});
             }
             User user = new User(){
@@ -80,8 +80,8 @@ namespace TestDatabase.Controllers
                 SessionTokenExpirationDate = DateTime.Now.AddDays(30),
                 UserProfilePicturePath = "./test"
                 };
-            await context.Users.AddAsync(user);
-            await context.SaveChangesAsync();
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
             return Created();
         }
         public class UserTokenInfo{
@@ -96,5 +96,5 @@ namespace TestDatabase.Controllers
             public string Password {get;set;}
             public string Email {get; set;}
         }
-    }    
+    }
 }

@@ -8,7 +8,11 @@ namespace TestDatabase.Controllers
     [Route("[controller]")]
     public class LoginController : ControllerBase
     {
-        public Context context = new Context();
+        private readonly Context _context;
+        public AutentificationController(Context context)
+        {
+            _context = context;
+        }
         Random random = new Random();
 
         [HttpPost("login")]

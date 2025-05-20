@@ -4,12 +4,12 @@ namespace TestDatabase;
 
 public class Context : DbContext
 {
-  public DbSet<User>         Users         {get;set;}
-  public DbSet<Message>      Messages      {get;set;}
-  public DbSet<UsersInChat>  UsersInChat   {get;set;}
-  public DbSet<Contact>      Contact       {get;set;}
-  public DbSet<Chat>         Chat          {get;set;}
-  public DbSet<Notification> Notifications {get;set;}
+  public DbSet<User> Users { get; set; }
+  public DbSet<Message> Messages { get; set; }
+  public DbSet<UsersInChat> UsersInChat { get; set; }
+  public DbSet<Contact> Contact { get; set; }
+  public DbSet<Chat> Chat { get; set; }
+  public DbSet<Notification> Notifications { get; set; }
 
   public Context(DbContextOptions options) : base(options)
   {
@@ -89,7 +89,7 @@ public class Context : DbContext
     _context.Database.EnsureCreated();
 
     List<Chat> chats = new List<Chat>();
-    if(!_context.Chat.Any())
+    if (!_context.Chat.Any())
     {
       chats.AddRange(
           new() { ChatID = 1, ChatName = "Weekend Plans" },
@@ -112,10 +112,10 @@ public class Context : DbContext
 
 
     List<User> users = new List<User>();
-    if(!_context.Users.Any())
+    if (!_context.Users.Any())
     {
       users.AddRange(
-          new() {  Username = "alice", Password = "AlicePass123", Email = "alice@example.com", IsOnline = true, SessionToken = "token-alice", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/alice.jpg" },
+          new() { Username = "alice", Password = "AlicePass123", Email = "alice@example.com", IsOnline = true, SessionToken = "token-alice", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/alice.jpg" },
           new() { UserID = 2, Username = "bob", Password = "BobPass123", Email = "bob@example.com", IsOnline = false, SessionToken = "token-bob", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/bob.jpg" },
           new() { UserID = 3, Username = "carla", Password = "CarlaPass123", Email = "carla@example.com", IsOnline = true, SessionToken = "token-carla", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/carla.jpg" },
           new() { UserID = 4, Username = "daniel", Password = "DanielPass123", Email = "daniel@example.com", IsOnline = true, SessionToken = "token-daniel", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/daniel.jpg" },
@@ -131,7 +131,7 @@ public class Context : DbContext
     }
 
     List<Notification> notifications = new List<Notification>();
-    if(!_context.Notifications.Any())
+    if (!_context.Notifications.Any())
     {
       notifications.AddRange(
           new() { NotificationID = 1, UserID = 1, Content = "New message in Weekend Plans", Timestamp = DateTime.UtcNow.AddMinutes(-5) },
@@ -150,7 +150,7 @@ public class Context : DbContext
     }
 
     List<Contact> contacts = new List<Contact>();
-    if(!_context.Contact.Any())
+    if (!_context.Contact.Any())
     {
       contacts.AddRange(
           new() { ContactID = 1, UserID = 1, ContactUserID = 2 },
@@ -169,7 +169,7 @@ public class Context : DbContext
     }
 
     List<Message> messages = new List<Message>();
-    if(!_context.Messages.Any())
+    if (!_context.Messages.Any())
     {
       messages.AddRange(
           new() { MessageID = 1, ChatID = 1, UserID = 1, Content = "Anyone up for hiking this weekend?", TimeStamp = DateTime.UtcNow.AddMinutes(-60), IsSeen = false, IsFile = false },
@@ -188,7 +188,7 @@ public class Context : DbContext
     }
 
     List<UsersInChat> usersInChats = new List<UsersInChat>();
-    if(!_context.UsersInChat.Any())
+    if (!_context.UsersInChat.Any())
     {
       int usersInChatId = 1;
       for (int i = 0; i < chats.Count; i++)

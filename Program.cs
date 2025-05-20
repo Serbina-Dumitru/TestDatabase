@@ -9,15 +9,19 @@ public class Program
   {
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddControllers();
-    builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"),ServiceLifetime.Scoped);
-
+    builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"), ServiceLifetime.Scoped);
+    builder.Services.AddControllers()
+      .AddJsonOptions(options =>
+      {
+          options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+      });
     var app = builder.Build();
 #if DEBUG
     using (var scope = app.Services.CreateScope())
     {
       var services = scope.ServiceProvider;
       var dbContext = services.GetRequiredService<Context>();
-      Context.Seed(dbContext);
+      //Context.Seed(dbContext);
     }
 #endif
     app.MapControllers();

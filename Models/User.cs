@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace TestDatabase;
 
@@ -22,6 +22,9 @@ public class User
 
   [Required]
   public bool IsOnline {get;set;}
+
+  [Required]
+  public DateTime LastTimeOnline {get;set;}
 
   [Required]
   [StringLength(255)]

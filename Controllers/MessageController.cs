@@ -70,6 +70,41 @@ namespace TestDatabase.Controllers{
         .ToList();
       return Ok(new {status = "success", data = new {messages = messages}});
     }
+    [HttpPost("get-new-chat-messages")]
+    public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] MessageType3 messageType3){
+      if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
+          string.IsNullOrWhiteSpace(messageType3.ChatID) ||
+          messageType3.Time == null){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType3.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      var userExistInChat = await _context.UsersInChat.FirstOrDefaultAsync(c => c.ChatID == int.Parse(messageType3.ChatID) &&
+                                                                           c.UserID == user.UserID);
+      if(userExistInChat == null){
+        return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
+      }
+      var messages = _context.Messages
+        .Where(m => m.TimeStamp > messageType3.Time.AddSeconds(-1))
+        .Select(m => new {
+          MessageID = m.MessageID,
+          UserID = m.UserID,
+          Content = m.Content,
+          TimeStamp = m.TimeStamp,
+          ChatID = m.ChatID,
+          IsSeen = m.IsSeen,
+          IsFile = m.IsFile,
+          Sender = new {
+              UserID = m.Sender.UserID,
+              Username = m.Sender.Username,
+              UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+        .ToList();
+      return Ok(new {status = "success", data = new {messages = messages}});
+    }
     public class MessageInfo{
       public string SessionToken {get; set;}
       public string Content {get; set;}
@@ -78,6 +113,11 @@ namespace TestDatabase.Controllers{
     public class MessageType2{
       public string SessionToken {get; set;}
       public string ChatID {get;set;}
+    }
+    public class MessageType3{
+      public string SessionToken {get; set;}
+      public string ChatID {get;set;}
+      public DateTime Time { get;set; }
     }
   }
 }

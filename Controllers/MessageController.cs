@@ -105,7 +105,7 @@ namespace TestDatabase.Controllers{
         System.Console.WriteLine(messages);
       return Ok(new {status = "success", data = new {messages = messages}});
     }
-        [HttpPost("get-new-messages")]
+    [HttpPost("get-new-messages")]
     public async Task<IActionResult> SendToUserNewMessages([FromBody] MessageType4 messageType4){
       if(string.IsNullOrWhiteSpace(messageType4.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });

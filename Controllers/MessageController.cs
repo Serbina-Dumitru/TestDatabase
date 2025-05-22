@@ -51,7 +51,7 @@ namespace TestDatabase.Controllers{
       var messages = _context.Messages
         .Where(m => m.ChatID == int.Parse(messageType2.ChatID))
         .OrderByDescending(m => m.TimeStamp)
-        .Take(10)
+        .Take(50)
         .OrderBy(m => m.TimeStamp)
         .Select(m => new {
             MessageID = m.MessageID,
@@ -73,8 +73,7 @@ namespace TestDatabase.Controllers{
     [HttpPost("get-new-chat-messages")]
     public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] MessageType3 messageType3){
       if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
-          string.IsNullOrWhiteSpace(messageType3.ChatID) ||
-          messageType3.Time == null){
+          string.IsNullOrWhiteSpace(messageType3.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType3.SessionToken);
@@ -87,7 +86,7 @@ namespace TestDatabase.Controllers{
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
       var messages = _context.Messages
-        .Where(m => m.TimeStamp > messageType3.Time.AddSeconds(-1))
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5))
         .Select(m => new {
           MessageID = m.MessageID,
           UserID = m.UserID,
@@ -103,12 +102,12 @@ namespace TestDatabase.Controllers{
           }
         })
         .ToList();
+        System.Console.WriteLine(messages);
       return Ok(new {status = "success", data = new {messages = messages}});
     }
         [HttpPost("get-new-messages")]
     public async Task<IActionResult> SendToUserNewMessages([FromBody] MessageType4 messageType4){
-      if(string.IsNullOrWhiteSpace(messageType4.SessionToken) ||
-          messageType4.Time == null){
+      if(string.IsNullOrWhiteSpace(messageType4.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType4.SessionToken);
@@ -118,7 +117,7 @@ namespace TestDatabase.Controllers{
       var chats = _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
         .Where(c =>
           c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
-          c.Messages.Any(m => m.TimeStamp > messageType4.Time.AddSeconds(-1)))
+          c.Messages.Any(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5)))
         .Select(c => new {
           ChatId = c.ChatID,
           ChatName = c.ChatName,
@@ -149,11 +148,9 @@ namespace TestDatabase.Controllers{
     public class MessageType3{
       public string SessionToken {get; set;}
       public string ChatID {get;set;}
-      public DateTime Time { get;set; }
     }
     public class MessageType4{
       public string SessionToken {get; set;}
-      public DateTime Time { get;set; }
     }
   }
 }

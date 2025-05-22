@@ -1,4 +1,4 @@
-using DbFunctionality;
+﻿using DbFunctionality;
 using Microsoft.EntityFrameworkCore;
 using TestDatabase;
 using Newtonsoft.Json;
@@ -11,9 +11,10 @@ public class Program
     builder.Services.AddControllers();
     builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"), ServiceLifetime.Scoped);
     builder.Services.AddControllers()
-      .AddJsonOptions(options =>
+      .AddNewtonsoftJson(options =>
       {
-          options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+              options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+              options.SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
       });
     var app = builder.Build();
 #if DEBUG

@@ -105,6 +105,27 @@ namespace TestDatabase.Controllers{
         .ToList();
       return Ok(new {status = "success", data = new {messages = messages}});
     }
+        [HttpPost("get-new-messages")]
+    public async Task<IActionResult> SendToUserNewMessages([FromBody] MessageType4 messageType4){
+      if(string.IsNullOrWhiteSpace(messageType4.SessionToken) ||
+          messageType4.Time == null){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType4.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      var chats = _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
+        .Where(c =>
+          c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
+          c.Messages.Any(m => m.TimeStamp > messageType4.Time.AddSeconds(-1)))
+        .Select(c => new {
+          ChatId = c.ChatID,
+          ChatName = c.ChatName
+        })
+        .ToList();
+      return Ok(new {status = "success", data = new {chats = chats}});
+    }
     public class MessageInfo{
       public string SessionToken {get; set;}
       public string Content {get; set;}
@@ -117,6 +138,10 @@ namespace TestDatabase.Controllers{
     public class MessageType3{
       public string SessionToken {get; set;}
       public string ChatID {get;set;}
+      public DateTime Time { get;set; }
+    }
+    public class MessageType4{
+      public string SessionToken {get; set;}
       public DateTime Time { get;set; }
     }
   }

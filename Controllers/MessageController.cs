@@ -121,7 +121,18 @@ namespace TestDatabase.Controllers{
           c.Messages.Any(m => m.TimeStamp > messageType4.Time.AddSeconds(-1)))
         .Select(c => new {
           ChatId = c.ChatID,
-          ChatName = c.ChatName
+          ChatName = c.ChatName,
+          LastMessage = c.Messages
+            .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new {
+                m.MessageID,
+                m.Content,
+                m.TimeStamp,
+                m.UserID,
+                m.IsSeen,
+                m.IsFile
+            })
+            .FirstOrDefault()
         })
         .ToList();
       return Ok(new {status = "success", data = new {chats = chats}});

@@ -26,6 +26,9 @@ public class Program
     app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}");
+    app.MapGet("/", ()=>{
+        return "Test database is working :3";
+        });
 
     app.Run();
   }

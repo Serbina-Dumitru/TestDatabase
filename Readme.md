@@ -16,6 +16,7 @@ dotnet run
 ```
 
 ## Buld docker image and run it
+With [docker](https://www.docker.com/) we would be able to host and containerise the aplication, the ip of the container would be the ip of the host.
 ```
 git clone https://github.com/Serbina-Dumitru/TestDatabase
 cd TestDatabase

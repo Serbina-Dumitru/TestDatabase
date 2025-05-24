@@ -17,7 +17,7 @@ RUN dotnet publish "TestDatabase.csproj" -c Release -o /app/publish
 
 #RUN
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
-ENV ASPNETCORE_HTTP_PORTS=5171
+ENV ASPNETCORE_HTTP_PORTS=5001
 EXPOSE 5171
 WORKDIR /app
 COPY --from=publish /app/publish .

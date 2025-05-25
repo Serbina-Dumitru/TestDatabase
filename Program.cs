@@ -12,14 +12,23 @@ public class Program
     builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"),ServiceLifetime.Scoped);
 
     var app = builder.Build();
-#if DEBUG
-    using (var scope = app.Services.CreateScope())
-    {
-      var services = scope.ServiceProvider;
-      var dbContext = services.GetRequiredService<Context>();
-      Context.Seed(dbContext);
+    if(app.Environment.IsDevelopment()){
+      using (var scope = app.Services.CreateScope())
+      {
+        var services = scope.ServiceProvider;
+        var dbContext = services.GetRequiredService<Context>();
+        Context.Seed(dbContext);
+      }
+      app.UseDeveloperExceptionPage();
+      //app.Use(async (context, next) =>
+      //    {
+      //    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+      //    logger.LogInformation("Handling request: {Method} {Path}", context.Request.Method, context.Request.Path);
+      //    await next.Invoke();
+      //    logger.LogInformation("Response: {StatusCode}", context.Response.StatusCode);
+      //    });
     }
-#endif
+
     app.MapControllers();
     app.UseHttpsRedirection();
 

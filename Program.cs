@@ -9,8 +9,13 @@ public class Program
   {
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddControllers();
-    builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"),ServiceLifetime.Scoped);
-
+    builder.Services.AddDbContext<Context>(options => options.UseSqlite("Data Source = Messenger.db"), ServiceLifetime.Scoped);
+    builder.Services.AddControllers()
+      .AddNewtonsoftJson(options =>
+      {
+              options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+              options.SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
+      });
     var app = builder.Build();
     if(app.Environment.IsDevelopment()){
       using (var scope = app.Services.CreateScope())

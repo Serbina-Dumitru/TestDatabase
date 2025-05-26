@@ -6,40 +6,40 @@ public class User
 {
   [Key]
   [Required]
-  public int UserID {get;set;}
+  public int UserID { get; set; }
 
   [Required]
   [StringLength(100)]
-  public string Username {get;set;}
+  public string Username { get; set; }
 
   [Required]
   [StringLength(255)]
-  public string Password {get;set;}
+  public string Password { get; set; }
 
   [Required]
   [StringLength(255)]
-  public string Email {get;set;}
+  public string Email { get; set; }
 
   [Required]
-  public bool IsOnline {get;set;}
+  public bool IsOnline { get; set; }
 
   [Required]
   public DateTime LastTimeOnline {get;set;}
 
   [Required]
   [StringLength(255)]
-  public string SessionToken {get;set;}
+  public string SessionToken { get; set; }
 
   [Required]
-  public DateTime SessionTokenExpirationDate {get;set;}
+  public DateTime SessionTokenExpirationDate { get; set; }
 
   [Required]
   [StringLength(255)]
-  public string UserProfilePicturePath {get;set;}
+  public string UserProfilePicturePath { get; set; }
 
-  public ICollection<Message>       SentMessages  {get;set;}
-  public ICollection<Notification>  Notifications {get;set;}
-  public ICollection<UsersInChat>   UsersInChats  {get;set;}
-  public ICollection<Contact>       Contacts      {get;set;}
-  public ICollection<Contact>       ContactedBy   {get;set;}
+  public ICollection<Message> SentMessages { get; set; }
+  public ICollection<Notification> Notifications { get; set; }
+  public ICollection<UsersInChat> UsersInChats { get; set; }
+  public ICollection<Contact> Contacts { get; set; }
+  public ICollection<Contact> ContactedBy { get; set; }
 }

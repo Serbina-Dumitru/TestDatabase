@@ -29,7 +29,7 @@ docker run --rm -it --network=host \
   -e ASPNETCORE_URLS="https://[::]:5171" \
   -e ASPNETCORE_ENVIRONMENT=Development \
   -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx \
-  -e ASPNETCORE_Kestrel__Certificates__Default__Password="Admin123\!" \
+  -e ASPNETCORE_Kestrel__Certificates__Default__Password="Admin123" \
   -v ${HOME}/.microsoft/usersecrets/:/home/app/.microsoft/usersecrets \
   -v ${HOME}/.aspnet/https/:/https/ \
   databasetest:latest

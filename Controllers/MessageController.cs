@@ -48,6 +48,10 @@ namespace TestDatabase.Controllers{
       if(userExistInChat == null){
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
+      user.LastTimeOnline = DateTime.Now;
+      user.IsOnline = true;
+      _context.Users.Update(user);
+      _context.SaveChanges();
       var messages = _context.Messages
         .Where(m => m.ChatID == int.Parse(messageType2.ChatID))
         .OrderByDescending(m => m.TimeStamp)
@@ -117,21 +121,26 @@ namespace TestDatabase.Controllers{
       var chats = _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
         .Where(c =>
           c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
-          c.Messages.Any(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5)))
+          c.Messages.Any(m => m.TimeStamp > user.LastTimeOnline))
         .Select(c => new {
           ChatId = c.ChatID,
           ChatName = c.ChatName,
           LastMessage = c.Messages
             .OrderByDescending(m => m.TimeStamp)
             .Select(m => new {
-                m.MessageID,
-                m.Content,
-                m.TimeStamp,
-                m.UserID,
-                m.IsSeen,
-                m.IsFile
-            })
-            .FirstOrDefault()
+              UserID = m.UserID,
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              ChatID = m.ChatID,
+              IsSeen = m.IsSeen,
+              IsFile = m.IsFile,
+              Sender = new {
+                  UserID = m.Sender.UserID,
+                  Username = m.Sender.Username,
+                  UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+          .FirstOrDefault()
         })
         .ToList();
       return Ok(new {status = "success", data = new {chats = chats}});

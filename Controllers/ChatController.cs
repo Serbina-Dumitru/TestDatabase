@@ -23,6 +23,11 @@ namespace TestDatabase.Controllers
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
+
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+      }
+
       var existingChat = FindChat(chatInfoType1.ChatName);
       if (existingChat != null){
         return Conflict(new { status = "error", error = "chat with this name already exists"});
@@ -53,6 +58,9 @@ namespace TestDatabase.Controllers
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+      }
       Chat chat = FindChat(chatInfoType2.ChatName);
       var userExistInChat = await _context.UsersInChat.FirstOrDefaultAsync(uc => uc.ChatID == chat.ChatID &&
                                                                            uc.UserID == user.UserID);
@@ -80,6 +88,9 @@ namespace TestDatabase.Controllers
       User user = FindUser(chatInfoType3.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
       }
       var usersChats = _context.UsersInChat.Include(us => us.Chat)
         .Where(us => us.UserID == user.UserID)

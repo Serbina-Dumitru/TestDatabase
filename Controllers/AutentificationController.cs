@@ -30,6 +30,9 @@ namespace TestDatabase.Controllers
           {
             return Unauthorized(new { status = "error", error = "user not found" });
           }
+          if(user.IsAccountDeleted){
+            return Forbid();
+          }
 
           return Ok(new { status = "success", data = new { user } });
       }
@@ -47,6 +50,10 @@ namespace TestDatabase.Controllers
           if (user == null)
           {
               return Unauthorized(new { status = "error", error = "user not found" });
+          }
+
+          if(user.IsAccountDeleted){
+            return Forbid();
           }
 
           if (user.SessionTokenExpirationDate < DateTime.Now){

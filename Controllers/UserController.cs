@@ -38,7 +38,7 @@ namespace TestDatabase.Controllers
       if(HowMuchIsWritten == 0){
         return StatusCode(500,new{status="error",error="The server was unable to delete your account."});
       }
-      user.Username = $"Deleted-Account-{DateTime.Now.Second}";
+      user.Username = $"Deleted-Account-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
       await _context.SaveChangesAsync();
 
       return Ok(new {status = "success",data = new {user = user}});

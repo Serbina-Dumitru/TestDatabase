@@ -76,6 +76,9 @@ public class Context : DbContext
     modelBuilder.Entity<User>()
       .Property(u => u.IsOnline)
       .HasDefaultValue(false);
+    modelBuilder.Entity<User>()
+      .Property(u => u.IsAccountDeleted)
+      .HasDefaultValue(false);
     modelBuilder.Entity<Message>()
       .Property(u => u.IsSeen)
       .HasDefaultValue(false);
@@ -115,16 +118,16 @@ public class Context : DbContext
     if (!_context.Users.Any())
     {
       users.AddRange(
-          new() {UserID = 1, Username = "alice", Password = "AlicePass123", Email = "alice@example.com", IsOnline = true, LastTimeOnline = DateTime.UtcNow.AddMinutes(-120), SessionToken = "token-alice", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/alice.jpg" },
-          new() { UserID = 2, Username = "bob", Password = "BobPass123", Email = "bob@example.com", IsOnline = false,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-bob", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/bob.jpg" },
-          new() { UserID = 3, Username = "carla", Password = "CarlaPass123", Email = "carla@example.com", IsOnline = true,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-carla", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/carla.jpg" },
-          new() { UserID = 4, Username = "daniel", Password = "DanielPass123", Email = "daniel@example.com", IsOnline = true,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-daniel", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/daniel.jpg" },
-          new() { UserID = 5, Username = "emily", Password = "EmilyPass123", Email = "emily@example.com", IsOnline = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-emily", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/emily.jpg" },
-          new() { UserID = 6, Username = "frank", Password = "FrankPass123", Email = "frank@example.com", IsOnline = true, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-frank", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/frank.jpg" },
-          new() { UserID = 7, Username = "grace", Password = "GracePass123", Email = "grace@example.com", IsOnline = true, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-grace", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/grace.jpg" },
-          new() { UserID = 8, Username = "henry", Password = "HenryPass123", Email = "henry@example.com", IsOnline = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-henry", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/henry.jpg" },
-          new() { UserID = 9, Username = "isabel", Password = "IsabelPass123", Email = "isabel@example.com", IsOnline = true, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-isabel", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/isabel.jpg" },
-          new() { UserID = 10, Username = "jack", Password = "JackPass123", Email = "jack@example.com", IsOnline = true, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-jack", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/jack.jpg" }
+          new() { UserID = 1, Username = "alice", Password = "AlicePass123", Email = "alice@example.com", IsOnline = true, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-alice", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/alice.jpg" },
+          new() { UserID = 2, Username = "bob", Password = "BobPass123", Email = "bob@example.com", IsOnline = false, IsAccountDeleted = false,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-bob", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/bob.jpg" },
+          new() { UserID = 3, Username = "carla", Password = "CarlaPass123", Email = "carla@example.com", IsOnline = true, IsAccountDeleted = false,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-carla", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/carla.jpg" },
+          new() { UserID = 4, Username = "daniel", Password = "DanielPass123", Email = "daniel@example.com", IsOnline = true, IsAccountDeleted = false,  LastTimeOnline = DateTime.UtcNow,SessionToken = "token-daniel", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/daniel.jpg" },
+          new() { UserID = 5, Username = "emily", Password = "EmilyPass123", Email = "emily@example.com", IsOnline = false, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-emily", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/emily.jpg" },
+          new() { UserID = 6, Username = "frank", Password = "FrankPass123", Email = "frank@example.com", IsOnline = true, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-frank", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/frank.jpg" },
+          new() { UserID = 7, Username = "grace", Password = "GracePass123", Email = "grace@example.com", IsOnline = true, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-grace", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/grace.jpg" },
+          new() { UserID = 8, Username = "henry", Password = "HenryPass123", Email = "henry@example.com", IsOnline = false, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-henry", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/henry.jpg" },
+          new() { UserID = 9, Username = "isabel", Password = "IsabelPass123", Email = "isabel@example.com", IsOnline = true, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-isabel", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/isabel.jpg" },
+          new() { UserID = 10, Username = "jack", Password = "JackPass123", Email = "jack@example.com", IsOnline = true, IsAccountDeleted = false, LastTimeOnline = DateTime.UtcNow, SessionToken = "token-jack", SessionTokenExpirationDate = DateTime.UtcNow.AddDays(1), UserProfilePicturePath = "images/profiles/jack.jpg" }
           );
       _context.Users.AddRange(users);
       _context.SaveChanges();

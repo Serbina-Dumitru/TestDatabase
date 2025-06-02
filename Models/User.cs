@@ -24,6 +24,9 @@ public class User
   public bool IsOnline { get; set; }
 
   [Required]
+  public bool IsAccountDeleted { get; set; }
+
+  [Required]
   public DateTime LastTimeOnline {get;set;}
 
   [Required]

@@ -29,6 +29,10 @@ namespace TestDatabase.Controllers
         return Unauthorized(new { status = "error", error = "user not found" });
       }
 
+      if(user.IsAccountDeleted){
+        return Forbid();
+      }
+
       user.IsAccountDeleted = true;
       int HowMuchIsWritten = await _context.SaveChangesAsync();
       if(HowMuchIsWritten == 0){
@@ -54,6 +58,11 @@ namespace TestDatabase.Controllers
       {
         return Unauthorized(new { status = "error", error = "user not found" });
       }
+
+      if(user.IsAccountDeleted){
+        return Forbid();
+      }
+
       User? existingUser = await _context.Users
         .FirstOrDefaultAsync(u => u.Username == userInfo.NewUserName);
       if(existingUser != null){
@@ -81,6 +90,10 @@ namespace TestDatabase.Controllers
 
       if (user == null) {
         return Unauthorized(new { status = "error", error = "user not found" });
+      }
+
+      if(user.IsAccountDeleted){
+        return Forbid();
       }
 
       if(userInfo.NewPassword.Count() < 8){
@@ -118,6 +131,10 @@ namespace TestDatabase.Controllers
 
       if (user == null) {
         return Unauthorized(new { status = "error", error = "user not found" });
+      }
+
+      if(user.IsAccountDeleted){
+        return Forbid();
       }
 
       if(!new EmailAddressAttribute().IsValid(userInfo.NewEmail)){

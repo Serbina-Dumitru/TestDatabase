@@ -30,7 +30,7 @@ namespace TestDatabase.Controllers
       }
 
       if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
       user.IsAccountDeleted = true;
@@ -60,7 +60,7 @@ namespace TestDatabase.Controllers
       }
 
       if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
       User? existingUser = await _context.Users
@@ -93,7 +93,7 @@ namespace TestDatabase.Controllers
       }
 
       if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
       if(userInfo.NewPassword.Count() < 8){
@@ -134,7 +134,7 @@ namespace TestDatabase.Controllers
       }
 
       if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
       if(!new EmailAddressAttribute().IsValid(userInfo.NewEmail)){

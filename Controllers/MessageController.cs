@@ -23,6 +23,11 @@ namespace TestDatabase.Controllers{
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
+
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+      }
+
       Message message = new Message{
         UserID = user.UserID,
         Content = messageInfo.Content,
@@ -42,6 +47,9 @@ namespace TestDatabase.Controllers{
       User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
       }
       var userExistInChat = await _context.UsersInChat.FirstOrDefaultAsync(c => c.ChatID == int.Parse(messageType2.ChatID) &&
                                                                            c.UserID == user.UserID);
@@ -84,6 +92,9 @@ namespace TestDatabase.Controllers{
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
+      }
       var userExistInChat = await _context.UsersInChat.FirstOrDefaultAsync(c => c.ChatID == int.Parse(messageType3.ChatID) &&
                                                                            c.UserID == user.UserID);
       if(userExistInChat == null){
@@ -117,6 +128,9 @@ namespace TestDatabase.Controllers{
       User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType4.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
       }
       var chats = _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
         .Where(c =>

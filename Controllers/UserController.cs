@@ -15,22 +15,30 @@ namespace TestDatabase.Controllers
       _context = context;
     }
 
-    //[HttpPost("delete")]
-    //public async Task<IActionResult> DeleteUser([FromBody] UserTokenInfo userToken){
-    //  if (string.IsNullOrWhiteSpace(userToken.SessionToken))
-    //  {
-    //    return BadRequest(new { status = "error", error = "empty data" });
-    //  }
-    //  var user = await _context.Users
-    //    .FirstOrDefaultAsync(u => u.SessionToken == userToken.SessionToken);
+    [HttpPost("delete-user")]
+    public async Task<IActionResult> DeleteUser([FromBody] UserTokenInfo userToken){
+      if (string.IsNullOrWhiteSpace(userToken.SessionToken))
+      {
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      var user = await _context.Users
+        .FirstOrDefaultAsync(u => u.SessionToken == userToken.SessionToken);
 
-    //  if (user == null)
-    //  {
-    //    return Unauthorized(new { status = "error", error = "user not found" });
-    //  }
-    //  //should the user be cascade deleted, or should we have a flag for specifying that the user is "deleted"?
+      if (user == null)
+      {
+        return Unauthorized(new { status = "error", error = "user not found" });
+      }
 
-    //}
+      user.IsAccountDeleted = true;
+      int HowMuchIsWritten = await _context.SaveChangesAsync();
+      if(HowMuchIsWritten == 0){
+        return StatusCode(500,new{status="error",error="The server was unable to delete your account."});
+      }
+      user.Username = $"Deleted-Account-{DateTime.Now.Second}";
+      await _context.SaveChangesAsync();
+
+      return Ok(new {status = "success",data = new {user = user}});
+    }
 
     [HttpPost("change-user-name")]
     public async Task<IActionResult> ChangeUserName([FromBody] UserTokenAndUserName userInfo){

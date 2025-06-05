@@ -25,6 +25,12 @@ public class Message
   public bool IsFile { get; set; }
 
   [Required]
+  public bool IsDelited { get; set; }
+
+   [Required]
+  public bool IsModified { get; set; }
+
+  [Required]
   [ForeignKey("UserID")]
   public User Sender { get; set; }
 

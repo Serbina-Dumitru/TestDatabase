@@ -159,6 +159,8 @@ namespace TestDatabase.Controllers{
         .ToList();
       return Ok(new {status = "success", data = new {chats = chats}});
     }
+    //[HttpDelete("message-delet")]
+    //public async Task<IActionResult> DeleteMessage([FromBody] )
     public class MessageInfo{
       public string SessionToken {get; set;}
       public string Content {get; set;}

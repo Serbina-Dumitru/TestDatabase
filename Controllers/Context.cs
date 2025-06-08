@@ -89,7 +89,9 @@ public class Context : DbContext
       .Property(u => u.IsDeleted)
       .HasDefaultValue(false);
     modelBuilder.Entity<Message>()
-      .Property(u => u.IsModified)
+      .Property(u => u.IsModified);
+    modelBuilder.Entity<Chat>()
+      .Property(u => u.IsChatDeleted)
       .HasDefaultValue(false);
   }
 
@@ -101,16 +103,16 @@ public class Context : DbContext
     if (!_context.Chat.Any())
     {
       chats.AddRange(
-          new() { ChatID = 1, ChatName = "Weekend Plans" },
-          new() { ChatID = 2, ChatName = "Project Alpha Team" },
-          new() { ChatID = 3, ChatName = "Family Group" },
-          new() { ChatID = 4, ChatName = "Fitness Buddies" },
-          new() { ChatID = 5, ChatName = "Book Club" },
-          new() { ChatID = 6, ChatName = "Movie Night" },
-          new() { ChatID = 7, ChatName = "Work Updates" },
-          new() { ChatID = 8, ChatName = "Gaming Crew" },
-          new() { ChatID = 9, ChatName = "Writers Circle" },
-          new() { ChatID = 10, ChatName = "Travel Squad" }
+          new() { ChatID = 1, ChatName = "Weekend Plans", IsChatDeleted = false },
+          new() { ChatID = 2, ChatName = "Project Alpha Team" , IsChatDeleted = false},
+          new() { ChatID = 3, ChatName = "Family Group" , IsChatDeleted = false},
+          new() { ChatID = 4, ChatName = "Fitness Buddies" , IsChatDeleted = false},
+          new() { ChatID = 5, ChatName = "Book Club" , IsChatDeleted = false},
+          new() { ChatID = 6, ChatName = "Movie Night" , IsChatDeleted = false},
+          new() { ChatID = 7, ChatName = "Work Updates" , IsChatDeleted = false},
+          new() { ChatID = 8, ChatName = "Gaming Crew" , IsChatDeleted = false},
+          new() { ChatID = 9, ChatName = "Writers Circle" , IsChatDeleted = false},
+          new() { ChatID = 10, ChatName = "Travel Squad" , IsChatDeleted = false}
           );
       _context.Chat.AddRange(chats);
       _context.SaveChanges();

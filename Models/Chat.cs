@@ -11,6 +11,9 @@ public class Chat
   [StringLength(255)]
   public string ChatName { get; set; }
 
+  [Required]
+  public bool IsChatDeleted { get; set; }
+
   public ICollection<Message> Messages { get; set; }
   public ICollection<UsersInChat> ChatMembers { get; set; }
 

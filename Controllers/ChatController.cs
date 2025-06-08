@@ -61,12 +61,20 @@ namespace TestDatabase.Controllers
       if(user.IsAccountDeleted){
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
+
       Chat chat = FindChat(chatInfoType2.ChatName);
+      if(chat == null){
+        return Unauthorized(new {status = "error", error = "chat not found"});
+      }
       var userExistInChat = await _context.UsersInChat.FirstOrDefaultAsync(uc => uc.ChatID == chat.ChatID &&
                                                                            uc.UserID == user.UserID);
       if(userExistInChat == null){
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
+      if(chat.IsChatDeleted){
+        return StatusCode(403, new {status = "error", error = "The chat has been deleted, you can not further alter or use it."});
+      }
+
       User newUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == chatInfoType2.Username);
       if(newUser == null){
         return Unauthorized(new {status = "error", error = "new user not found"});
@@ -100,6 +108,36 @@ namespace TestDatabase.Controllers
         });
       return Ok( new {status = "success", data = new { chats = usersChats }});
     }
+
+    [HttpDeleteAttribute("delete-chat")]
+    public async Task<IActionResult> DeleteChat([FromBody] ChatInfoType1 chatInfo){
+      if(string.IsNullOrWhiteSpace(chatInfo.SessionToken)){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = FindUser(chatInfo.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      Chat chat = FindChat(chatInfo.ChatName);
+      if(chat == null){
+        return Unauthorized(new {status = "error", error = "chat not found"});
+      }
+      if(chat.IsChatDeleted){
+        return StatusCode(403, new {status = "error", error = "The chat has been deleted, you can not further alter or use it."});
+      }
+
+      chat.IsChatDeleted = true;
+      int HowMuchIsWritten = await _context.SaveChangesAsync();
+      if(HowMuchIsWritten == 0){
+        return StatusCode(500,new{status="error",error="The server was unable to delete the chat."});
+      }
+
+      return Ok(new {status = "success",data = new {user = user}});
+    }
+
     public class ChatInfoType1{
       public string SessionToken {get; set;}
       public string ChatName {get; set;}

@@ -61,7 +61,7 @@ namespace TestDatabase.Controllers{
       _context.Users.Update(user);
       _context.SaveChanges();
       var messages = _context.Messages
-        .Where(m => m.ChatID == int.Parse(messageType2.ChatID))
+        .Where(m => m.ChatID == int.Parse(messageType2.ChatID) && !m.IsDelited)
         .OrderByDescending(m => m.TimeStamp)
         .Take(50)
         .OrderBy(m => m.TimeStamp)
@@ -83,7 +83,7 @@ namespace TestDatabase.Controllers{
       return Ok(new {status = "success", data = new {messages = messages}});
     }
     [HttpPost("get-new-chat-messages")]
-    public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] MessageType3 messageType3){
+    public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] MessageType2 messageType3){
       if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
           string.IsNullOrWhiteSpace(messageType3.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -101,7 +101,7 @@ namespace TestDatabase.Controllers{
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
       var messages = _context.Messages
-        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5) && m.Sender.UserID != user.UserID)
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5) && m.Sender.UserID != user.UserID && !m.IsDelited)
         .Select(m => new {
           MessageID = m.MessageID,
           UserID = m.UserID,
@@ -159,8 +159,64 @@ namespace TestDatabase.Controllers{
         .ToList();
       return Ok(new {status = "success", data = new {chats = chats}});
     }
-    //[HttpDelete("message-delet")]
-    //public async Task<IActionResult> DeleteMessage([FromBody] )
+    [HttpDelete("message-delete")]
+    public async Task<IActionResult> DeleteMessage([FromBody] MessageType3 messageType3){
+      if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
+         string.IsNullOrWhiteSpace(messageType3.MessageID)){
+          return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType3.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      var message = _context.Messages.FirstOrDefault(m => m.MessageID == int.Parse(messageType3.MessageID));
+      message.IsDelited = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+      return Ok(new {status = "success", data="message deleted successfully"});
+    }
+    [HttpPut("message-update")]
+    public async Task<IActionResult> UpdateMessage([FromBody] MessageType5 messageType5){
+      if(string.IsNullOrWhiteSpace(messageType5.SessionToken) ||
+         string.IsNullOrWhiteSpace(messageType5.MessageID) || 
+         string.IsNullOrWhiteSpace(messageType5.Content)){
+          return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType5.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      var message = _context.Messages.FirstOrDefault(m => m.MessageID == int.Parse(messageType5.MessageID));
+      message.Content = messageType5.Content;
+      message.IsModified = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+      return Ok(new {status = "success", data="message updated successfully"});
+    }
+
+    [HttpPost("get-deleted-messages")]
+    public async Task<IActionResult> SendToUserDeletedMessage([FromBody] MessageType2 MessageType2){
+      if(string.IsNullOrWhiteSpace(MessageType2.SessionToken) ||
+         string.IsNullOrWhiteSpace(MessageType2.SessionToken)){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == MessageType2.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      var deletedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(MessageType2.ChatID) && m.IsDelited).Select(m => m.MessageID).ToList();
+      return Ok( new { status = "success", data = deletedMessages});
+    }
+
     public class MessageInfo{
       public string SessionToken {get; set;}
       public string Content {get; set;}
@@ -171,11 +227,16 @@ namespace TestDatabase.Controllers{
       public string ChatID {get;set;}
     }
     public class MessageType3{
-      public string SessionToken {get; set;}
-      public string ChatID {get;set;}
+      public string SessionToken {get;set;}
+      public string MessageID {get;set;}
     }
     public class MessageType4{
       public string SessionToken {get; set;}
+    }
+        public class MessageType5{
+      public string SessionToken {get;set;}
+      public string MessageID {get;set;}
+      public string Content {get; set;}
     }
   }
 }

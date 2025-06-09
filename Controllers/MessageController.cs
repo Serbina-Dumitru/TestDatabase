@@ -61,7 +61,7 @@ namespace TestDatabase.Controllers{
       _context.Users.Update(user);
       _context.SaveChanges();
       var messages = _context.Messages
-        .Where(m => m.ChatID == int.Parse(messageType2.ChatID) && !m.IsDelited)
+        .Where(m => m.ChatID == int.Parse(messageType2.ChatID) && !m.IsDeleted)
         .OrderByDescending(m => m.TimeStamp)
         .Take(50)
         .OrderBy(m => m.TimeStamp)
@@ -101,7 +101,7 @@ namespace TestDatabase.Controllers{
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
       var messages = _context.Messages
-        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5) && m.Sender.UserID != user.UserID && !m.IsDelited)
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5) && m.Sender.UserID != user.UserID && !m.IsDeleted)
         .Select(m => new {
           MessageID = m.MessageID,
           UserID = m.UserID,
@@ -173,7 +173,7 @@ namespace TestDatabase.Controllers{
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
       var message = _context.Messages.FirstOrDefault(m => m.MessageID == int.Parse(messageType3.MessageID));
-      message.IsDelited = true;
+      message.IsDeleted = true;
       _context.Messages.Update(message);
       _context.SaveChanges();
       return Ok(new {status = "success", data="message deleted successfully"});
@@ -201,20 +201,37 @@ namespace TestDatabase.Controllers{
     }
 
     [HttpPost("get-deleted-messages")]
-    public async Task<IActionResult> SendToUserDeletedMessage([FromBody] MessageType2 MessageType2){
-      if(string.IsNullOrWhiteSpace(MessageType2.SessionToken) ||
-         string.IsNullOrWhiteSpace(MessageType2.SessionToken)){
+    public async Task<IActionResult> SendToUserDeletedMessage([FromBody] MessageType2 messageType2){
+      if(string.IsNullOrWhiteSpace(messageType2.SessionToken) ||
+         string.IsNullOrWhiteSpace(messageType2.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == MessageType2.SessionToken);
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
       if(user.IsAccountDeleted){
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
-      var deletedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(MessageType2.ChatID) && m.IsDelited).Select(m => m.MessageID).ToList();
+      var deletedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(messageType2.ChatID) && m.IsDeleted).Select(m => m.MessageID).ToList();
       return Ok( new { status = "success", data = deletedMessages});
+    }
+
+    [HttpPost("get-updated-messages")]
+    public async Task<IActionResult> SendToUserUpdatedMessages([FromBody] MessageType2 messageType2){
+      if(string.IsNullOrWhiteSpace(messageType2.SessionToken) ||
+         string.IsNullOrWhiteSpace(messageType2.SessionToken)){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      var updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(messageType2.ChatID) && m.IsModified).ToList();
+      return Ok( new { status = "success", data = updatedMessages});
     }
 
     public class MessageInfo{

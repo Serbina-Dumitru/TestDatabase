@@ -86,7 +86,7 @@ public class Context : DbContext
       .Property(u => u.IsFile)
       .HasDefaultValue(false);
     modelBuilder.Entity<Message>()
-      .Property(u => u.IsDelited)
+      .Property(u => u.IsDeleted)
       .HasDefaultValue(false);
     modelBuilder.Entity<Message>()
       .Property(u => u.IsModified)
@@ -181,16 +181,16 @@ public class Context : DbContext
     if (!_context.Messages.Any())
     {
       messages.AddRange(
-          new() { MessageID = 1, ChatID = 1, UserID = 1, Content = "Anyone up for hiking this weekend?", TimeStamp = DateTime.UtcNow.AddMinutes(-60), IsSeen = false, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 2, ChatID = 2, UserID = 2, Content = "Updated the document on our shared drive.", TimeStamp = DateTime.UtcNow.AddMinutes(-55), IsSeen = true, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 3, ChatID = 3, UserID = 3, Content = "Dinner at 7 sounds good!", TimeStamp = DateTime.UtcNow.AddMinutes(-50), IsSeen = true, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 4, ChatID = 4, UserID = 4, Content = "Don't forget leg day!", TimeStamp = DateTime.UtcNow.AddMinutes(-45), IsSeen = false, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 5, ChatID = 5, UserID = 5, Content = "Has everyone finished chapter 3?", TimeStamp = DateTime.UtcNow.AddMinutes(-40), IsSeen = false, IsFile = false, IsDelited = false, IsModified = false},
-          new() { MessageID = 6, ChatID = 6, UserID = 6, Content = "Let's watch Inception tonight!", TimeStamp = DateTime.UtcNow.AddMinutes(-35), IsSeen = true, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 7, ChatID = 7, UserID = 7, Content = "Meeting moved to 3pm.", TimeStamp = DateTime.UtcNow.AddMinutes(-30), IsSeen = true, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 8, ChatID = 8, UserID = 8, Content = "Game night at my place?", TimeStamp = DateTime.UtcNow.AddMinutes(-25), IsSeen = false, IsFile = false, IsDelited = false, IsModified = false },
-          new() { MessageID = 9, ChatID = 9, UserID = 9, Content = "Final draft submitted!", TimeStamp = DateTime.UtcNow.AddMinutes(-20), IsSeen = true, IsFile = true, IsDelited = false, IsModified = false },
-          new() { MessageID = 10, ChatID = 10, UserID = 10, Content = "Flight's at 6AM on Friday!", TimeStamp = DateTime.UtcNow.AddMinutes(-15), IsSeen = false, IsFile = false, IsDelited = false, IsModified = false }
+          new() { MessageID = 1, ChatID = 1, UserID = 1, Content = "Anyone up for hiking this weekend?", TimeStamp = DateTime.UtcNow.AddMinutes(-60), IsSeen = false, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 2, ChatID = 2, UserID = 2, Content = "Updated the document on our shared drive.", TimeStamp = DateTime.UtcNow.AddMinutes(-55), IsSeen = true, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 3, ChatID = 3, UserID = 3, Content = "Dinner at 7 sounds good!", TimeStamp = DateTime.UtcNow.AddMinutes(-50), IsSeen = true, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 4, ChatID = 4, UserID = 4, Content = "Don't forget leg day!", TimeStamp = DateTime.UtcNow.AddMinutes(-45), IsSeen = false, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 5, ChatID = 5, UserID = 5, Content = "Has everyone finished chapter 3?", TimeStamp = DateTime.UtcNow.AddMinutes(-40), IsSeen = false, IsFile = false, IsDeleted = false, IsModified = false},
+          new() { MessageID = 6, ChatID = 6, UserID = 6, Content = "Let's watch Inception tonight!", TimeStamp = DateTime.UtcNow.AddMinutes(-35), IsSeen = true, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 7, ChatID = 7, UserID = 7, Content = "Meeting moved to 3pm.", TimeStamp = DateTime.UtcNow.AddMinutes(-30), IsSeen = true, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 8, ChatID = 8, UserID = 8, Content = "Game night at my place?", TimeStamp = DateTime.UtcNow.AddMinutes(-25), IsSeen = false, IsFile = false, IsDeleted = false, IsModified = false },
+          new() { MessageID = 9, ChatID = 9, UserID = 9, Content = "Final draft submitted!", TimeStamp = DateTime.UtcNow.AddMinutes(-20), IsSeen = true, IsFile = true, IsDeleted = false, IsModified = false },
+          new() { MessageID = 10, ChatID = 10, UserID = 10, Content = "Flight's at 6AM on Friday!", TimeStamp = DateTime.UtcNow.AddMinutes(-15), IsSeen = false, IsFile = false, IsDeleted = false, IsModified = false }
           );
       _context.Messages.AddRange(messages);
       _context.SaveChanges();

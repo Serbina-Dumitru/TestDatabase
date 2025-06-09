@@ -16,7 +16,7 @@ namespace TestDatabase.Controllers
     [HttpPost("new-chat")]
     public async Task<IActionResult> CreateNewChat([FromBody] ChatInfoType1 chatInfoType1){
       if(string.IsNullOrWhiteSpace(chatInfoType1.SessionToken) ||
-          string.IsNullOrWhiteSpace(chatInfoType1.ChatName)){
+          string.IsNullOrWhiteSpace(chatInfoType1.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = FindUser(chatInfoType1.SessionToken);
@@ -28,16 +28,16 @@ namespace TestDatabase.Controllers
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
-      var existingChat = FindChat(chatInfoType1.ChatName);
+      var existingChat = FindChat(chatInfoType1.ChatID);
       if (existingChat != null){
         return Conflict(new { status = "error", error = "chat with this name already exists"});
       }
       Chat chat = new Chat{
-        ChatName = chatInfoType1.ChatName,
+        ChatName = chatInfoType1.ChatID,
       };
       _context.Chat.Add(chat);
       _context.SaveChanges();
-      chat = FindChat(chatInfoType1.ChatName);
+      chat = FindChat(chatInfoType1.ChatID);
       UsersInChat usersInChat = new UsersInChat{
         ChatID = chat.ChatID,
         UserID = user.UserID
@@ -50,7 +50,7 @@ namespace TestDatabase.Controllers
     [HttpPost("add-user-in-chat")]
     public async Task<IActionResult> AddUserInChat([FromBody] ChatInfoType2 chatInfoType2){
       if(string.IsNullOrWhiteSpace(chatInfoType2.SessionToken) ||
-        string.IsNullOrWhiteSpace(chatInfoType2.ChatName) ||
+        string.IsNullOrWhiteSpace(chatInfoType2.ChatID) ||
         string.IsNullOrWhiteSpace(chatInfoType2.Username)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
@@ -62,7 +62,7 @@ namespace TestDatabase.Controllers
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
-      Chat chat = FindChat(chatInfoType2.ChatName);
+      Chat chat = FindChat(chatInfoType2.ChatID);
       if(chat == null){
         return Unauthorized(new {status = "error", error = "chat not found"});
       }
@@ -101,7 +101,7 @@ namespace TestDatabase.Controllers
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
       var usersChats = _context.UsersInChat.Include(us => us.Chat)
-        .Where(us => us.UserID == user.UserID)
+        .Where(us => us.UserID == user.UserID && !us.Chat.IsChatDeleted)
         .Select(uc => new {
           ChatId = uc.Chat.ChatID,
           ChatName = uc.Chat.ChatName
@@ -109,7 +109,7 @@ namespace TestDatabase.Controllers
       return Ok( new {status = "success", data = new { chats = usersChats }});
     }
 
-    [HttpDeleteAttribute("delete-chat")]
+    [HttpDelete("delete-chat")]
     public async Task<IActionResult> DeleteChat([FromBody] ChatInfoType1 chatInfo){
       if(string.IsNullOrWhiteSpace(chatInfo.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -121,7 +121,7 @@ namespace TestDatabase.Controllers
       if(user.IsAccountDeleted){
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
-      Chat chat = FindChat(chatInfo.ChatName);
+      Chat chat = FindChat(chatInfo.ChatID);
       if(chat == null){
         return Unauthorized(new {status = "error", error = "chat not found"});
       }
@@ -135,27 +135,65 @@ namespace TestDatabase.Controllers
         return StatusCode(500,new{status="error",error="The server was unable to delete the chat."});
       }
 
-      return Ok(new {status = "success",data = new {user = user}});
+      return Ok(new {status = "success",data = chat});
+    }
+
+    [HttpPut("update-chat")]
+    public async Task<IActionResult> UpdateChat([FromBody] ChatInfoType4 chatInfo){
+      if(string.IsNullOrWhiteSpace(chatInfo.SessionToken) ||
+         string.IsNullOrWhiteSpace(chatInfo.ChatName) ||
+         string.IsNullOrWhiteSpace(chatInfo.ChatID)){
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
+      User user = FindUser(chatInfo.SessionToken);
+      if(user == null){
+        return Unauthorized(new {status = "error", error = "user not found"});
+      }
+      if(user.IsAccountDeleted){
+        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
+      }
+      Chat chat = FindChat(chatInfo.ChatID);
+      if(chat == null){
+        return Unauthorized(new {status = "error", error = "chat not found"});
+      }
+      if(chat.IsChatDeleted){
+        return StatusCode(403, new {status = "error", error = "The chat has been deleted, you can not further alter or use it."});
+      }
+
+      chat.ChatName = chatInfo.ChatName;
+      int HowMuchIsWritten = await _context.SaveChangesAsync();
+      if(HowMuchIsWritten == 0){
+        return StatusCode(500,new{status="error",error="The server was unable to change chat name."});
+      }
+
+      return Ok(new {status = "success",data = chat});
     }
 
     public class ChatInfoType1{
       public string SessionToken {get; set;}
-      public string ChatName {get; set;}
+      public string ChatID {get; set;}
     }
     public class ChatInfoType2{
       public string SessionToken {get; set;}
-      public string ChatName {get; set;}
+      public string ChatID {get; set;}
       public string Username {get; set;}
     }
 
     public class ChatInfoType3{
       public string SessionToken {get; set;}
     }
+
+    public class ChatInfoType4{
+      public string SessionToken {get; set;}
+      public string ChatID {get; set;}
+      public string ChatName {get; set;}
+    }
+
     public User FindUser(string token){
       return _context.Users.FirstOrDefault(u => u.SessionToken == token);
     }
-    public Chat FindChat(string chatName){
-      return _context.Chat.FirstOrDefault(c => c.ChatName == chatName);
+    public Chat FindChat(string ChatID){
+      return _context.Chat.FirstOrDefault(c => c.ChatID == int.Parse(ChatID));
     }
   }
 }

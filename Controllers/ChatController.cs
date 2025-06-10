@@ -10,10 +10,12 @@ namespace TestDatabase.Controllers
   {
     private readonly Context _context;
     private DbFunctionality _dbFunctionality;
+    private VereficationFunctionality _verefication;
     public ChatController(Context context)
     {
       _context = context;
       _dbFunctionality = new DbFunctionality(_context);
+      _verefication = new VereficationFunctionality();
     }
 
     [HttpPost("new-chat")]
@@ -24,12 +26,9 @@ namespace TestDatabase.Controllers
       }
 
       User user = _dbFunctionality.FindUserByToken(chatInfoType1.SessionToken);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
       Chat chat = _dbFunctionality.CreateChat(chatInfoType1.ChatName);
       UsersInChat usersInChat = _dbFunctionality.AddUserToChat(chat, user);
@@ -44,12 +43,9 @@ namespace TestDatabase.Controllers
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = _dbFunctionality.FindUserByToken(chatInfoType2.SessionToken);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
       Chat chat = _dbFunctionality.FindChatById(chatInfoType2.ChatID);
       if(chat == null){
@@ -65,12 +61,10 @@ namespace TestDatabase.Controllers
       }
 
       user = _dbFunctionality.FindUserByUsername(chatInfoType2.Username);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "new user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
+
       var newUserExistInChat = _dbFunctionality.FindUserInChat(chat, user);
       if(newUserExistInChat != null){
         return Conflict(new {status = "error", error = "user already exist iin this chat"});
@@ -87,12 +81,9 @@ namespace TestDatabase.Controllers
       }
 
       User user =  _dbFunctionality.FindUserByToken(chatInfoType3.SessionToken);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
       var usersChats = _dbFunctionality.FindAllChatsWithThisUser(user);
       return Ok( new {status = "success", data = new { chats = usersChats }});
@@ -105,12 +96,9 @@ namespace TestDatabase.Controllers
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user =  _dbFunctionality.FindUserByToken(chatInfo.SessionToken);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
       Chat chat = _dbFunctionality.FindChatById(chatInfo.ChatID);
       if(chat == null){
@@ -137,12 +125,10 @@ namespace TestDatabase.Controllers
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = _dbFunctionality.FindUserByToken(chatInfo.SessionToken);
-      if(user == null){
-        return Unauthorized(new {status = "error", error = "user not found"});
-      }
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
+        
       Chat chat = _dbFunctionality.FindChatById(chatInfo.ChatID);
       if(chat == null){
         return Unauthorized(new {status = "error", error = "chat not found"});

@@ -11,10 +11,12 @@ namespace TestDatabase.Controllers
   {
       private readonly Context _context;
       private DbFunctionality _dbFunctionality;
+      private VereficationFunctionality _verefication;
       public AutentificationController(Context context)
       {
           _context = context;
           _dbFunctionality  = new DbFunctionality(_context);
+          _verefication = new VereficationFunctionality();
       }
 
       [HttpPost("login")]
@@ -27,16 +29,13 @@ namespace TestDatabase.Controllers
 
           var user = _dbFunctionality.FindUserByUsernameAndPassword(userLoginInfo.Username, userLoginInfo.Password);
 
-          if (user == null)
-          {
-            return Unauthorized(new { status = "error", error = "user not found" });
-          }
-          if(user.IsAccountDeleted){
-            return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
-          }
+          var verificationResult = await _verefication.UserVerefication(user);
+          if (verificationResult != null)
+            return verificationResult;
 
           return Ok(new { status = "success", data = new { user } });
       }
+
       [HttpPost("token")]
       public async Task<IActionResult> Token([FromBody] UserTokenInfo userTokenInfo)
       {
@@ -47,13 +46,9 @@ namespace TestDatabase.Controllers
 
         var user = _dbFunctionality.FindUserByToken(userTokenInfo.SessionToken);
 
-        if (user == null)
-        {
-          return Unauthorized(new { status = "error", error = "user not found" });
-        }
-        if(user.IsAccountDeleted){
-          return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
-        }
+        var verificationResult = await _verefication.UserVerefication(user);
+        if (verificationResult != null)
+          return verificationResult;
 
         if (user.SessionTokenExpirationDate < DateTime.Now){
           _dbFunctionality.CreateNewSessionToken(user);

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
 {
@@ -8,9 +9,11 @@ namespace TestDatabase.Controllers
   public class ChatController : ControllerBase
   {
     private readonly Context _context;
+    private DbFunctionality _dbFunctionality;
     public ChatController(Context context)
     {
       _context = context;
+      _dbFunctionality = new DbFunctionality(_context);
     }
 
     [HttpPost("new-chat")]
@@ -19,7 +22,7 @@ namespace TestDatabase.Controllers
           string.IsNullOrWhiteSpace(chatInfoType1.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = FindUser(chatInfoType1.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(chatInfoType1.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -28,10 +31,6 @@ namespace TestDatabase.Controllers
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
-      var existingChat = FindChat(chatInfoType1.ChatID);
-      if (existingChat != null){
-        return Conflict(new { status = "error", error = "chat with this name already exists"});
-      }
       Chat chat = new Chat{
         ChatName = chatInfoType1.ChatID,
       };
@@ -54,7 +53,7 @@ namespace TestDatabase.Controllers
         string.IsNullOrWhiteSpace(chatInfoType2.Username)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = FindUser(chatInfoType2.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(chatInfoType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -93,7 +92,7 @@ namespace TestDatabase.Controllers
       if(string.IsNullOrWhiteSpace(chatInfoType3.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = FindUser(chatInfoType3.SessionToken);
+      User user =  _dbFunctionality.FindUserByToken(chatInfoType3.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -114,7 +113,7 @@ namespace TestDatabase.Controllers
       if(string.IsNullOrWhiteSpace(chatInfo.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = FindUser(chatInfo.SessionToken);
+      User user =  _dbFunctionality.FindUserByToken(chatInfo.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -145,7 +144,7 @@ namespace TestDatabase.Controllers
          string.IsNullOrWhiteSpace(chatInfo.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = FindUser(chatInfo.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(chatInfo.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -187,10 +186,6 @@ namespace TestDatabase.Controllers
       public string SessionToken {get; set;}
       public string ChatID {get; set;}
       public string ChatName {get; set;}
-    }
-
-    public User FindUser(string token){
-      return _context.Users.FirstOrDefault(u => u.SessionToken == token);
     }
     public Chat FindChat(string ChatID){
       return _context.Chat.FirstOrDefault(c => c.ChatID == int.Parse(ChatID));

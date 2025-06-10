@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
 {
@@ -9,9 +10,11 @@ namespace TestDatabase.Controllers
   public class AutentificationController : ControllerBase
   {
       private readonly Context _context;
+      private DbFunctionality _dbFunctionality;
       public AutentificationController(Context context)
       {
           _context = context;
+          _dbFunctionality  = new DbFunctionality(_context);
       }
       Random random = new Random();
 
@@ -23,8 +26,7 @@ namespace TestDatabase.Controllers
             return BadRequest(new { status = "error", error = "empty data" });
           }
 
-          var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Username == userLoginInfo.Username && u.Password == userLoginInfo.Password);
+          var user = _dbFunctionality.FindUserByUsernameAndPassword(userLoginInfo.Username, userLoginInfo.Password);
 
           if (user == null)
           {
@@ -44,23 +46,18 @@ namespace TestDatabase.Controllers
           return BadRequest(new { status = "error", error = "empty data" });
         }
 
-        var user = await _context.Users
-          .FirstOrDefaultAsync(u => u.SessionToken == userTokenInfo.SessionToken);
+        var user = _dbFunctionality.FindUserByToken(userTokenInfo.SessionToken);
 
         if (user == null)
         {
           return Unauthorized(new { status = "error", error = "user not found" });
         }
-
         if(user.IsAccountDeleted){
           return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});//Forbid();
         }
 
         if (user.SessionTokenExpirationDate < DateTime.Now){
-          user.SessionToken = user.Username+random.Next(1000, 9999);
-          user.SessionTokenExpirationDate = DateTime.Now.AddDays(30);
-          _context.Users.Update(user);
-          _context.SaveChanges();
+          _dbFunctionality.CreateNewSessionToken(user);
         }
         return Ok(new { status = "success", data = new { user } });
       }
@@ -73,23 +70,13 @@ namespace TestDatabase.Controllers
           return BadRequest(new { status = "error",
               error = "Username, password, and email must not be empty." });
         }
-        if(await _context.Users.
-            FirstOrDefaultAsync(u => u.Username == newUserInfo.Username) != null){
+        if(_dbFunctionality.FindUserByUsername(newUserInfo.Username) != null){
           return Conflict(new {status = "error",
               error = "A user with this username already exists."});
         }
-        User user = new User(){
-          Username = newUserInfo.Username,
-          Password = newUserInfo.Password,
-          Email = newUserInfo.Email,
-          IsOnline = false,
-          SessionToken = newUserInfo.Username+random.Next(1000, 9999),
-          SessionTokenExpirationDate = DateTime.Now.AddDays(30),
-          UserProfilePicturePath = "./test"
-        };
-        await _context.Users.AddAsync(user);
-        await _context.SaveChangesAsync();
-        return Created();
+
+        User user = _dbFunctionality.CreateUser(newUserInfo.Username, newUserInfo.Password, newUserInfo.Email);
+        return Ok(new { status = "success", data = new { user } });
       }
       public class UserTokenInfo{
         public string SessionToken {get; set;}

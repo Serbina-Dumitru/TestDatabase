@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TestDatabase.Functionality;
 using System.ComponentModel.DataAnnotations;
 
 namespace TestDatabase.Controllers
@@ -10,49 +11,42 @@ namespace TestDatabase.Controllers
   public class UserController : ControllerBase
   {
     private readonly Context _context;
+    private DbFunctionality _dbFunctionality;
     public UserController(Context context)
     {
       _context = context;
+      _dbFunctionality = new DbFunctionality(_context);
     }
 
-    [HttpPost("delete-user")]
+    [HttpDelete("delete-user")]
     public async Task<IActionResult> DeleteUser([FromBody] UserTokenInfo userToken){
       if (string.IsNullOrWhiteSpace(userToken.SessionToken))
       {
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      var user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userToken.SessionToken);
+
+      var user = _dbFunctionality.FindUserByToken(userToken.SessionToken);
 
       if (user == null)
       {
         return Unauthorized(new { status = "error", error = "user not found" });
       }
-
       if(user.IsAccountDeleted){
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
-      user.IsAccountDeleted = true;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to delete your account."});
-      }
-      user.Username = $"Deleted-Account-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-      await _context.SaveChangesAsync();
-
+      user = _dbFunctionality.DeleteUser(user);
       return Ok(new {status = "success",data = new {user = user}});
     }
 
-    [HttpPost("change-user-name")]
+    [HttpPut("change-user-name")]
     public async Task<IActionResult> ChangeUserName([FromBody] UserTokenAndUserName userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewUserName)   )
       {
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
+      User? user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
 
       if (user == null)
       {
@@ -63,30 +57,23 @@ namespace TestDatabase.Controllers
         return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
       }
 
-      User? existingUser = await _context.Users
-        .FirstOrDefaultAsync(u => u.Username == userInfo.NewUserName);
+      User? existingUser = _dbFunctionality.FindUserByUsername(userInfo.NewUserName);
       if(existingUser != null){
         return Conflict(new{status = "error",error="User with that username already exists."});
       }
 
-      user.Username = userInfo.NewUserName;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your user name."});
-      }
-
+      user = _dbFunctionality.ChangeUsername(user, userInfo.NewUserName);
       return Ok(new {status = "success",data = new {user = user}});
     }
 
-    [HttpPost("change-user-password")]
+    [HttpPut("change-user-password")]
     public async Task<IActionResult> ChangeUserPassword([FromBody] UserTokenAndUserPassword userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewPassword))
       {
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
+      User? user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
 
       if (user == null) {
         return Unauthorized(new { status = "error", error = "user not found" });
@@ -105,29 +92,20 @@ namespace TestDatabase.Controllers
       if(!userInfo.NewPassword.Any(c => char.IsDigit(c))){
         return BadRequest(new {status ="error", error = "The password should contain at least one digit."});
       }
-      //if(!userInfo.NewPassword.Any(c => char.IsSymbol(c))){
-      //  return BadRequest(new {status ="error", error = "The password should contain at least one symbol."});
-      //}
 
-
-      user.Password = userInfo.NewPassword;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your password."});
-      }
+      user = _dbFunctionality.ChangeUserPassword(user, userInfo.NewPassword);
 
       return Ok(new {status = "success",data = new {user = user}});
 
     }
-    [HttpPost("change-user-email")]
+    [HttpPut("change-user-email")]
     public async Task<IActionResult> ChangeUserEmail([FromBody] UserTokenAndUserEmail userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewEmail))
       {
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
+      User? user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
 
       if (user == null) {
         return Unauthorized(new { status = "error", error = "user not found" });
@@ -141,11 +119,7 @@ namespace TestDatabase.Controllers
         return BadRequest(new {status = "error", error = "The provided email is invalid."});
       }
 
-      user.Email = userInfo.NewEmail;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your email."});
-      }
+      user = _dbFunctionality.ChangeUserEmail(user, userInfo.NewEmail);
 
       return Ok(new {status = "success",data = new {user = user}});
     }

@@ -1,10 +1,85 @@
 using Microsoft.EntityFrameworkCore;
 using TestDatabase;
 
-namespace DbFunctionality
+namespace TestDatabase.Functionality
 {
-  class DbFunctionalityClass
+  class DbFunctionality
   {
+    public Random random;
+    private readonly Context _context;
+    public DbFunctionality(Context context)
+    {
+      _context = context;
+      random = new Random();
+    }
+
+    //User
+    public User FindUserByToken(string token){
+        return _context.Users.FirstOrDefault(u => u.SessionToken == token);
+    }
+    public User FindUserByUsernameAndPassword(string username, string password){
+      return _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+    }
+    public User FindUserByUsername(string username){
+      return _context.Users.FirstOrDefault(u => u.Username == username);
+    }
+
+    public User CreateUser(string username, string password, string email){
+      User user = new User(){
+          Username = username,
+          Password = password,
+          Email = email,
+          IsOnline = false,
+          SessionToken = username+random.Next(100000, 999999),
+          SessionTokenExpirationDate = DateTime.Now.AddDays(30),
+          UserProfilePicturePath = "./test"
+        };
+        _context.Users.Add(user);
+        _context.SaveChanges();
+        return user;
+    }
+
+    public User CreateNewSessionToken(User user){
+      user.SessionToken = user.Username+random.Next(1000, 9999);
+      user.SessionTokenExpirationDate = DateTime.Now.AddDays(30);
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+
+    public User DeleteUser(User user){
+      user.IsAccountDeleted = true;
+      user.Username = $"Deleted-Account-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+
+    public User ChangeUsername(User user, string newUserName){
+      user.Username = newUserName;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+    public User ChangeUserPassword(User user, string newPassword){
+      user.Password = newPassword;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+    public User ChangeUserEmail(User user, string newEmail){
+      user.Email = newEmail;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+    //Message
+
+
+    //Chat
+  
+
+
     public static void QuerryAllDbNames()
     {
       using (var _context = new Context())

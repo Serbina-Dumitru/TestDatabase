@@ -2,14 +2,17 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers{
   [ApiController]
   [Route("[controller]")]
   public class MessageController : ControllerBase{
     private readonly Context _context;
+    private DbFunctionality _dbFunctionality;
     public MessageController(Context context){
         _context = context;
+        _dbFunctionality = new DbFunctionality(_context);
     }
 
     [HttpPost("save")]
@@ -19,7 +22,7 @@ namespace TestDatabase.Controllers{
           string.IsNullOrWhiteSpace(messageInfo.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageInfo.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageInfo.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -44,7 +47,7 @@ namespace TestDatabase.Controllers{
           string.IsNullOrWhiteSpace(messageType2.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -88,7 +91,7 @@ namespace TestDatabase.Controllers{
           string.IsNullOrWhiteSpace(messageType3.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType3.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType3.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -125,7 +128,7 @@ namespace TestDatabase.Controllers{
       if(string.IsNullOrWhiteSpace(messageType4.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType4.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType4.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -165,7 +168,7 @@ namespace TestDatabase.Controllers{
          string.IsNullOrWhiteSpace(messageType3.MessageID)){
           return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType3.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType3.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -185,7 +188,7 @@ namespace TestDatabase.Controllers{
          string.IsNullOrWhiteSpace(messageType5.Content)){
           return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType5.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType5.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -206,7 +209,7 @@ namespace TestDatabase.Controllers{
          string.IsNullOrWhiteSpace(messageType2.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }
@@ -223,7 +226,7 @@ namespace TestDatabase.Controllers{
          string.IsNullOrWhiteSpace(messageType2.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User user = await _context.Users.FirstOrDefaultAsync(u => u.SessionToken == messageType2.SessionToken);
+      User user = _dbFunctionality.FindUserByToken(messageType2.SessionToken);
       if(user == null){
         return Unauthorized(new {status = "error", error = "user not found"});
       }

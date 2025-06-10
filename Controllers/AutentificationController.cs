@@ -16,7 +16,6 @@ namespace TestDatabase.Controllers
           _context = context;
           _dbFunctionality  = new DbFunctionality(_context);
       }
-      Random random = new Random();
 
       [HttpPost("login")]
       public async Task<IActionResult> Login([FromBody] UserLoginInfo userLoginInfo)

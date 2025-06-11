@@ -106,7 +106,7 @@ namespace TestDatabase.Controllers
           ChatId = uc.Chat.ChatID,
           ChatName = uc.Chat.ChatName
         });
-      return Ok( new {status = "success", data = new { chats = usersChats }});
+      return Ok( new { status = "success", data = usersChats });
     }
 
     [HttpDelete("delete-chat")]

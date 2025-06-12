@@ -37,7 +37,7 @@ namespace TestDatabase.Controllers{
       };
       _context.Messages.AddAsync(message);
       _context.SaveChanges();
-      return Created();
+      return Ok(new { status = "success", data =  message } );
     }
     [HttpPost("get-chat-messages")]
     public async Task<IActionResult> SendToUserMessagesFromChat([FromBody] MessageType2 messageType2){
@@ -216,9 +216,15 @@ namespace TestDatabase.Controllers{
       var verificationResult = await _verefication.UserVerefication(user);
       if (verificationResult != null)
         return verificationResult;
-        
+      
       var updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(messageType2.ChatID) && m.IsModified).ToList();
-      return Ok( new { status = "success", data = updatedMessages});
+      foreach( var message in updatedMessages){
+        message.IsModified = false;
+        _context.Messages.Update(message);
+      }
+      _context.SaveChanges();
+
+      return Ok( new { status = "success", data = new { messages = updatedMessages } });
     }
 
     public class MessageInfo{

@@ -86,7 +86,7 @@ namespace TestDatabase.Controllers
         return verificationResult;
 
       var usersChats = _dbFunctionality.FindAllChatsWithThisUser(user);
-      return Ok( new {status = "success", data = new { chats = usersChats }});
+      return Ok(new { status = "success", data = usersChats });
     }
 
     [HttpDelete("delete-chat")]

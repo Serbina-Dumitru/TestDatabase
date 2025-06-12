@@ -70,7 +70,7 @@ namespace TestDatabase.Controllers
         }
 
         User user = _dbFunctionality.CreateUser(newUserInfo.Username, newUserInfo.Password, newUserInfo.Email);
-        return Ok(new { status = "success", data = new { user } });
+        return Ok(new { status = "success", data = new { user = user } });
       }
       public class UserTokenInfo{
         public string SessionToken {get; set;}

@@ -98,7 +98,7 @@ namespace TestDatabase.Controllers{
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
       var messages = _context.Messages
-        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-0.5) && m.Sender.UserID != user.UserID && !m.IsDeleted)
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-1) && m.Sender.UserID != user.UserID && !m.IsDeleted)
         .Select(m => new {
           MessageID = m.MessageID,
           UserID = m.UserID,

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using TestDatabase;
 using TestDatabase.Dtos;
 using TestDatabase.Dtos.ResponseDtos;
@@ -76,9 +77,145 @@ namespace TestDatabase.Functionality
       return user;
     }
 
+    public UserDto ConvertUserToUserDto(User user)
+    {
+      return new UserDto()
+      {
+        UserID = user.UserID,
+        Username = user.Username,
+        Email = user.Email,
+        SessionToken = user.SessionToken,
+        UserProfilePicturePath = user.UserProfilePicturePath
+      };
+    }
+
+    public void UpdateUserOnlineStatus(User user)
+    {
+      user.LastTimeOnline = DateTime.Now;
+      user.IsOnline = true;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+    }
 
     //Message
+    public List<MessageToClientDto> FindLastNMessagesInChat(string ChatID)
+    {
+      return _context.Messages
+        .Where(m => m.ChatID == int.Parse(ChatID) && !m.IsDeleted)
+        .OrderByDescending(m => m.TimeStamp)
+        .Take(50)
+        .OrderBy(m => m.TimeStamp)
+         .Select(m => new MessageToClientDto
+         {
+           MessageID = m.MessageID,
+           Content = m.Content,
+           TimeStamp = m.TimeStamp,
+           Sender = new SenderDto
+           {
+             UserID = m.Sender.UserID,
+             Username = m.Sender.Username,
+             UserProfilePicturePath = m.Sender.UserProfilePicturePath
+           }
+         })
+        .ToList();
+    }
+    public List<MessageToClientDto> FindNewMessagesInChat(User user)
+    {
+      return _context.Messages
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-2) && m.Sender.UserID != user.UserID && !m.IsDeleted)
+        .Select(m => new MessageToClientDto
+        {
+          MessageID = m.MessageID,
+          Content = m.Content,
+          TimeStamp = m.TimeStamp,
+          Sender = new SenderDto
+          {
+            UserID = m.Sender.UserID,
+            Username = m.Sender.Username,
+            UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+        .ToList();
+    }
 
+    public Message FindMessageById(string messageID)
+    {
+      return _context.Messages.FirstOrDefault(m => m.MessageID == int.Parse(messageID));
+    }
+
+    public Message CreateMessage(int UserID, string Content, string ChatID)
+    {
+      Message message = new Message
+      {
+        UserID = UserID,
+        Content = Content,
+        TimeStamp = DateTime.Now,
+        ChatID = int.Parse(ChatID)
+      };
+      _context.Messages.AddAsync(message);
+      _context.SaveChanges();
+      return message;
+    }
+
+    public void DeleteMessage(string messageID)
+    {
+      Message message = FindMessageById(messageID);
+      message.IsDeleted = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+    }
+
+    public void EditMessage(string messageId, string content)
+    {
+      Message message = FindMessageById(messageId);
+      message.Content = content;
+      message.IsModified = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+    }
+
+    public List<int> FindDeletedMessages(string chatId)
+    {
+      return _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsDeleted).Select(m => m.MessageID).ToList();
+    }
+
+    public List<MessageToClientDto> FindEditedMessages(string chatId)
+    {
+      List<Message> updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsModified)
+       .ToList();
+
+      List<MessageToClientDto> messages = new List<MessageToClientDto>();
+      foreach (var message in updatedMessages)
+      {
+        message.IsModified = false;
+        _context.Messages.Update(message);
+        messages.Add(ConvertMessageToMessageToClientDto(message));
+      }
+      _context.SaveChanges();
+      return messages;
+    }
+
+    public MessageToClientDto ConvertMessageToMessageToClientDto(Message message)
+    {
+      return new MessageToClientDto()
+      {
+        MessageID = message.MessageID,
+        Content = message.Content,
+        TimeStamp = message.TimeStamp,
+        Sender = ConvertToSenderDto(message.Sender)
+      };
+    }
+
+
+    public SenderDto ConvertToSenderDto(User sender)
+    {
+      return new SenderDto()
+      {
+        UserID = sender.UserID,
+        Username = sender.Username,
+        UserProfilePicturePath = sender.UserProfilePicturePath
+      };
+    }
 
     //Chat
     public Chat FindChatById(string id){
@@ -96,6 +233,34 @@ namespace TestDatabase.Functionality
           ChatName = c.Chat.ChatName,
           LastMessage = c.Chat.Messages
           .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new MessageToClientDto
+            {
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              Sender = new SenderDto
+              {
+                UserID = m.Sender.UserID,
+                Username = m.Sender.Username,
+                UserProfilePicturePath = m.Sender.UserProfilePicturePath
+              }
+            })
+          .FirstOrDefault()
+        })
+        .ToList();
+    }
+
+    public List<ChatDto> FindAllChatsWithOfflineMessages(User user)
+    {
+      return _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
+        .Where(c =>
+          c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
+          c.Messages.Any(m => m.TimeStamp > user.LastTimeOnline))
+        .Select(c => new ChatDto
+        {
+          ChatID = c.ChatID,
+          ChatName = c.ChatName,
+          LastMessage = c.Messages
+            .OrderByDescending(m => m.TimeStamp)
             .Select(m => new MessageToClientDto
             {
               Content = m.Content,

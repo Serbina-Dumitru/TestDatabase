@@ -35,14 +35,7 @@ namespace TestDatabase.Controllers
       if (verificationResult != null)
         return verificationResult;
 
-      UserDto userDto = new UserDto()
-      {
-        UserID = user.UserID,
-        Username = user.Username,
-        Email = user.Email,
-        SessionToken = user.SessionToken,
-        UserProfilePicturePath = user.UserProfilePicturePath
-      };
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
       return Ok(new { status = "success", data = new { user = userDto } });
     }
 
@@ -63,14 +56,7 @@ namespace TestDatabase.Controllers
       if (user.SessionTokenExpirationDate < DateTime.Now){
         _dbFunctionality.CreateNewSessionToken(user);
       }
-      UserDto userDto = new UserDto()
-      {
-        UserID = user.UserID,
-        Username = user.Username,
-        Email = user.Email,
-        SessionToken = user.SessionToken,
-        UserProfilePicturePath = user.UserProfilePicturePath
-      };
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
       return Ok(new { status = "success", data = new { user = userDto } });
     }
 
@@ -89,14 +75,7 @@ namespace TestDatabase.Controllers
       }
 
       User user = _dbFunctionality.CreateUser(userInfo.Username, userInfo.Password, userInfo.Email);
-      UserDto userDto = new UserDto()
-      {
-        UserID = user.UserID,
-        Username = user.Username,
-        Email = user.Email,
-        SessionToken = user.SessionToken,
-        UserProfilePicturePath = user.UserProfilePicturePath
-      };
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
       return Ok(new { status = "success", data = new { user = userDto } });
     }
   }

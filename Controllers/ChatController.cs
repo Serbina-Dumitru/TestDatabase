@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TestDatabase.Dtos.RequestDtos;
 using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
@@ -19,7 +20,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPost("new-chat")]
-    public async Task<IActionResult> CreateNewChat([FromBody] ChatInfoType1 chatInfoType1){
+    public async Task<IActionResult> CreateNewChat([FromBody] ChatCreateRequestDto chatInfoType1){
       if(string.IsNullOrWhiteSpace(chatInfoType1.SessionToken) ||
           string.IsNullOrWhiteSpace(chatInfoType1.ChatName)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -36,7 +37,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPost("add-user-in-chat")]
-    public async Task<IActionResult> AddUserInChat([FromBody] ChatInfoType2 chatInfoType2){
+    public async Task<IActionResult> AddUserInChat([FromBody] AddUserToChatRequestDto chatInfoType2){
       if(string.IsNullOrWhiteSpace(chatInfoType2.SessionToken) ||
         string.IsNullOrWhiteSpace(chatInfoType2.ChatID) ||
         string.IsNullOrWhiteSpace(chatInfoType2.Username)){
@@ -75,7 +76,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPost("all-users-chats")]
-    public async Task<IActionResult> AllUsersChats([FromBody] ChatInfoType3 chatInfoType3){
+    public async Task<IActionResult> AllUsersChats([FromBody] GetUsersChatsRequestDto chatInfoType3){
       if(string.IsNullOrWhiteSpace(chatInfoType3.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
@@ -90,7 +91,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpDelete("delete-chat")]
-    public async Task<IActionResult> DeleteChat([FromBody] ChatInfoType5 chatInfo){
+    public async Task<IActionResult> DeleteChat([FromBody] ChatDeleteRequestDto chatInfo){
       if(string.IsNullOrWhiteSpace(chatInfo.SessionToken) ||
          string.IsNullOrWhiteSpace(chatInfo.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -118,7 +119,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPut("update-chat")]
-    public async Task<IActionResult> UpdateChat([FromBody] ChatInfoType4 chatInfo){
+    public async Task<IActionResult> UpdateChat([FromBody] ChatUpdateRequestDto chatInfo){
       if(string.IsNullOrWhiteSpace(chatInfo.SessionToken) ||
          string.IsNullOrWhiteSpace(chatInfo.ChatName) ||
          string.IsNullOrWhiteSpace(chatInfo.ChatID)){
@@ -144,30 +145,6 @@ namespace TestDatabase.Controllers
 
       chat = _dbFunctionality.UpdateChatName(chat, chatInfo.ChatName);
       return Ok(new {status = "success",data = chat});
-    }
-
-    public class ChatInfoType1{
-      public string SessionToken {get; set;}
-      public string ChatName {get; set;}
-    }
-    public class ChatInfoType2{
-      public string SessionToken {get; set;}
-      public string ChatID {get; set;}
-      public string Username {get; set;}
-    }
-
-    public class ChatInfoType3{
-      public string SessionToken {get; set;}
-    }
-
-    public class ChatInfoType4{
-      public string SessionToken {get; set;}
-      public string ChatID {get; set;}
-      public string ChatName {get; set;}
-    }
-        public class ChatInfoType5{
-      public string SessionToken {get; set;}
-      public string ChatID {get; set;}
     }
   }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using TestDatabase.Functionality;
 using System.ComponentModel.DataAnnotations;
+using TestDatabase.Dtos.RequestDtos;
 
 namespace TestDatabase.Controllers
 {
@@ -19,7 +20,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpDelete("delete-user")]
-    public async Task<IActionResult> DeleteUser([FromBody] UserTokenInfo userToken){
+    public async Task<IActionResult> DeleteUser([FromBody] UserDeleteRequestDto userToken){
       if (string.IsNullOrWhiteSpace(userToken.SessionToken))
       {
         return BadRequest(new { status = "error", error = "empty data" });
@@ -40,7 +41,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPut("change-user-name")]
-    public async Task<IActionResult> ChangeUserName([FromBody] UserTokenAndUserName userInfo){
+    public async Task<IActionResult> ChangeUserName([FromBody] UserChangeUsernameRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewUserName)   )
       {
@@ -67,7 +68,7 @@ namespace TestDatabase.Controllers
     }
 
     [HttpPut("change-user-password")]
-    public async Task<IActionResult> ChangeUserPassword([FromBody] UserTokenAndUserPassword userInfo){
+    public async Task<IActionResult> ChangeUserPassword([FromBody] UserChangePasswordRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewPassword))
       {
@@ -99,7 +100,7 @@ namespace TestDatabase.Controllers
 
     }
     [HttpPut("change-user-email")]
-    public async Task<IActionResult> ChangeUserEmail([FromBody] UserTokenAndUserEmail userInfo){
+    public async Task<IActionResult> ChangeUserEmail([FromBody] UserChangeEmailRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(userInfo.NewEmail))
       {
@@ -122,22 +123,6 @@ namespace TestDatabase.Controllers
       user = _dbFunctionality.ChangeUserEmail(user, userInfo.NewEmail);
 
       return Ok(new {status = "success",data = new {user = user}});
-    }
-
-    public class UserTokenInfo{
-      public string SessionToken {get; set;}
-    }
-    public class UserTokenAndUserName {
-      public string SessionToken {get; set;}
-      public string NewUserName {get; set;}
-    }
-    public class UserTokenAndUserPassword {
-      public string SessionToken {get; set;}
-      public string NewPassword {get; set;}
-    }
-    public class UserTokenAndUserEmail {
-      public string SessionToken {get; set;}
-      public string NewEmail {get; set;}
     }
   }
 }

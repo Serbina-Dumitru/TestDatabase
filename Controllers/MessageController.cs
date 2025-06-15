@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TestDatabase.Dtos.RequestDtos;
+using TestDatabase.Dtos.ResponseDtos;
 using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers{
@@ -18,7 +20,7 @@ namespace TestDatabase.Controllers{
     }
 
     [HttpPost("save")]
-    public async Task<IActionResult> ResieveMessageFromUser([FromBody] MessageInfo messageInfo){
+    public async Task<IActionResult> ResieveMessageFromUser([FromBody] MessageSaveRequestDto messageInfo){
       if(string.IsNullOrWhiteSpace(messageInfo.SessionToken) ||
           string.IsNullOrWhiteSpace(messageInfo.Content) ||
           string.IsNullOrWhiteSpace(messageInfo.ChatID)){
@@ -39,8 +41,9 @@ namespace TestDatabase.Controllers{
       _context.SaveChanges();
       return Ok(new { status = "success", data =  message } );
     }
+
     [HttpPost("get-chat-messages")]
-    public async Task<IActionResult> SendToUserMessagesFromChat([FromBody] MessageType2 messageType2){
+    public async Task<IActionResult> SendToUserMessagesFromChat([FromBody] GetMessagesInChatRequestDto messageType2){
       if(string.IsNullOrWhiteSpace(messageType2.SessionToken) ||
           string.IsNullOrWhiteSpace(messageType2.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -59,30 +62,29 @@ namespace TestDatabase.Controllers{
       user.IsOnline = true;
       _context.Users.Update(user);
       _context.SaveChanges();
-      var messages = _context.Messages
+      List<MessageToClientDto> messages = _context.Messages
         .Where(m => m.ChatID == int.Parse(messageType2.ChatID) && !m.IsDeleted)
         .OrderByDescending(m => m.TimeStamp)
         .Take(50)
         .OrderBy(m => m.TimeStamp)
-        .Select(m => new {
-            MessageID = m.MessageID,
-            UserID = m.UserID,
-            Content = m.Content,
-            TimeStamp = m.TimeStamp,
-            ChatID = m.ChatID,
-            IsSeen = m.IsSeen,
-            IsFile = m.IsFile,
-            Sender = new {
-                UserID = m.Sender.UserID,
-                Username = m.Sender.Username,
-                UserProfilePicturePath = m.Sender.UserProfilePicturePath
-            }
-        })
+         .Select(m => new MessageToClientDto
+         {
+           MessageID = m.MessageID,
+           Content = m.Content,
+           TimeStamp = m.TimeStamp,
+           Sender = new SenderDto
+           {
+             UserID = m.Sender.UserID,
+             Username = m.Sender.Username,
+             UserProfilePicturePath = m.Sender.UserProfilePicturePath
+           }
+         })
         .ToList();
       return Ok(new {status = "success", data = new {messages = messages}});
     }
+
     [HttpPost("get-new-chat-messages")]
-    public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] MessageType2 messageType3){
+    public async Task<IActionResult> SendToUserNewMessagesFromChat([FromBody] GetNewMessagesInChatRequestDto messageType3){
       if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
           string.IsNullOrWhiteSpace(messageType3.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
@@ -97,28 +99,23 @@ namespace TestDatabase.Controllers{
       if(userExistInChat == null){
         return Unauthorized(new {status = "error", error = "user dosen't have access to this chat"});
       }
-      var messages = _context.Messages
-        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-1) && m.Sender.UserID != user.UserID && !m.IsDeleted)
-        .Select(m => new {
+      List<MessageToClientDto> messages = _context.Messages
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-2) && m.Sender.UserID != user.UserID && !m.IsDeleted)
+        .Select(m => new MessageToClientDto{
           MessageID = m.MessageID,
-          UserID = m.UserID,
           Content = m.Content,
           TimeStamp = m.TimeStamp,
-          ChatID = m.ChatID,
-          IsSeen = m.IsSeen,
-          IsFile = m.IsFile,
-          Sender = new {
+          Sender = new SenderDto{
               UserID = m.Sender.UserID,
               Username = m.Sender.Username,
               UserProfilePicturePath = m.Sender.UserProfilePicturePath
           }
         })
         .ToList();
-        System.Console.WriteLine(messages);
       return Ok(new {status = "success", data = new {messages = messages}});
     }
-    [HttpPost("get-new-messages")]
-    public async Task<IActionResult> SendToUserNewMessages([FromBody] MessageType4 messageType4){
+    [HttpPost("get-chats-with-offline-messages")]
+    public async Task<IActionResult> SendToUserOfflineMessages([FromBody] GetChatsWithOfflineMessagesRequestDto messageType4){
       if(string.IsNullOrWhiteSpace(messageType4.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
@@ -131,19 +128,15 @@ namespace TestDatabase.Controllers{
         .Where(c =>
           c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
           c.Messages.Any(m => m.TimeStamp > user.LastTimeOnline))
-        .Select(c => new {
-          ChatId = c.ChatID,
+        .Select(c => new ChatDto{
+          ChatID = c.ChatID,
           ChatName = c.ChatName,
           LastMessage = c.Messages
             .OrderByDescending(m => m.TimeStamp)
-            .Select(m => new {
-              UserID = m.UserID,
+            .Select(m => new MessageToClientDto{
               Content = m.Content,
               TimeStamp = m.TimeStamp,
-              ChatID = m.ChatID,
-              IsSeen = m.IsSeen,
-              IsFile = m.IsFile,
-              Sender = new {
+              Sender = new SenderDto{
                   UserID = m.Sender.UserID,
                   Username = m.Sender.Username,
                   UserProfilePicturePath = m.Sender.UserProfilePicturePath
@@ -155,7 +148,7 @@ namespace TestDatabase.Controllers{
       return Ok(new {status = "success", data = new {chats = chats}});
     }
     [HttpDelete("message-delete")]
-    public async Task<IActionResult> DeleteMessage([FromBody] MessageType3 messageType3){
+    public async Task<IActionResult> DeleteMessage([FromBody] MessageDeleteRequestDto messageType3){
       if(string.IsNullOrWhiteSpace(messageType3.SessionToken) ||
          string.IsNullOrWhiteSpace(messageType3.MessageID)){
           return BadRequest(new { status = "error", error = "empty data" });
@@ -172,7 +165,7 @@ namespace TestDatabase.Controllers{
       return Ok(new {status = "success", data="message deleted successfully"});
     }
     [HttpPut("message-update")]
-    public async Task<IActionResult> UpdateMessage([FromBody] MessageType5 messageType5){
+    public async Task<IActionResult> UpdateMessage([FromBody] MessageUpdateRequestDto messageType5){
       if(string.IsNullOrWhiteSpace(messageType5.SessionToken) ||
          string.IsNullOrWhiteSpace(messageType5.MessageID) || 
          string.IsNullOrWhiteSpace(messageType5.Content)){
@@ -192,9 +185,9 @@ namespace TestDatabase.Controllers{
     }
 
     [HttpPost("get-deleted-messages")]
-    public async Task<IActionResult> SendToUserDeletedMessage([FromBody] MessageType2 messageType2){
+    public async Task<IActionResult> SendToUserDeletedMessage([FromBody] GetDeletedMessagesRequestDto messageType2){
       if(string.IsNullOrWhiteSpace(messageType2.SessionToken) ||
-         string.IsNullOrWhiteSpace(messageType2.SessionToken)){
+         string.IsNullOrWhiteSpace(messageType2.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = _dbFunctionality.FindUserByToken(messageType2.SessionToken);
@@ -207,9 +200,9 @@ namespace TestDatabase.Controllers{
     }
 
     [HttpPost("get-updated-messages")]
-    public async Task<IActionResult> SendToUserUpdatedMessages([FromBody] MessageType2 messageType2){
+    public async Task<IActionResult> SendToUserUpdatedMessages([FromBody] GetUpdatedMessagesRequestDto messageType2){
       if(string.IsNullOrWhiteSpace(messageType2.SessionToken) ||
-         string.IsNullOrWhiteSpace(messageType2.SessionToken)){
+         string.IsNullOrWhiteSpace(messageType2.ChatID)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
       User user = _dbFunctionality.FindUserByToken(messageType2.SessionToken);
@@ -217,36 +210,22 @@ namespace TestDatabase.Controllers{
       if (verificationResult != null)
         return verificationResult;
       
-      var updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(messageType2.ChatID) && m.IsModified).ToList();
+      var updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(messageType2.ChatID) && m.IsModified)
+        .ToList();
+      List<MessageToClientDto> messages = new List<MessageToClientDto>();
       foreach( var message in updatedMessages){
         message.IsModified = false;
         _context.Messages.Update(message);
+        MessageToClientDto messageToClient = new MessageToClientDto()
+        {
+          MessageID = message.MessageID,
+          Content = message.Content,
+          TimeStamp = message.TimeStamp
+        };
+        messages.Add(messageToClient);
       }
       _context.SaveChanges();
-
-      return Ok( new { status = "success", data = new { messages = updatedMessages } });
-    }
-
-    public class MessageInfo{
-      public string SessionToken {get; set;}
-      public string Content {get; set;}
-      public string ChatID {get; set;}
-    }
-    public class MessageType2{
-      public string SessionToken {get; set;}
-      public string ChatID {get;set;}
-    }
-    public class MessageType3{
-      public string SessionToken {get;set;}
-      public string MessageID {get;set;}
-    }
-    public class MessageType4{
-      public string SessionToken {get; set;}
-    }
-        public class MessageType5{
-      public string SessionToken {get;set;}
-      public string MessageID {get;set;}
-      public string Content {get; set;}
+      return Ok( new { status = "success", data = new { messages = messages } });
     }
   }
 }

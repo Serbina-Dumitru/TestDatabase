@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TestDatabase;
+using TestDatabase.Dtos;
+using TestDatabase.Dtos.ResponseDtos;
 
 namespace TestDatabase.Functionality
 {
@@ -85,10 +87,29 @@ namespace TestDatabase.Functionality
     public UsersInChat FindUserInChat(Chat chat, User user){
       return _context.UsersInChat.FirstOrDefault(uc => uc.ChatID == chat.ChatID && uc.UserID == user.UserID);
     }
-    public List<Chat> FindAllChatsWithThisUser(User user){
-      return _context.UsersInChat.Include(us => us.Chat)
+    public List<ChatDto> FindAllChatsWithThisUser(User user){
+      return _context.UsersInChat.Include(us => us.Chat).Include(c => c.Chat.Messages)
         .Where(us => us.UserID == user.UserID && !us.Chat.IsChatDeleted)
-        .Select(uc => uc.Chat).ToList();
+        .Select(c => new ChatDto
+        {
+          ChatID = c.ChatID,
+          ChatName = c.Chat.ChatName,
+          LastMessage = c.Chat.Messages
+          .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new MessageToClientDto
+            {
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              Sender = new SenderDto
+              {
+                UserID = m.Sender.UserID,
+                Username = m.Sender.Username,
+                UserProfilePicturePath = m.Sender.UserProfilePicturePath
+              }
+            })
+          .FirstOrDefault()
+        })
+        .ToList();
     }
 
     public Chat CreateChat(string chatName){

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using TestDatabase.Dtos.RequestDtos;
+using TestDatabase.Dtos.ResponseDtos;
 using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
@@ -9,80 +11,93 @@ namespace TestDatabase.Controllers
   [Route("[controller]")]
   public class AutentificationController : ControllerBase
   {
-      private readonly Context _context;
-      private DbFunctionality _dbFunctionality;
-      private VereficationFunctionality _verefication;
-      public AutentificationController(Context context)
+    private readonly Context _context;
+    private DbFunctionality _dbFunctionality;
+    private VereficationFunctionality _verefication;
+    public AutentificationController(Context context)
+    {
+      _context = context;
+      _dbFunctionality  = new DbFunctionality(_context);
+      _verefication = new VereficationFunctionality();
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] UserLoginRequestDto userInfo)
+    {
+      if (string.IsNullOrWhiteSpace(userInfo.Username) || string.IsNullOrWhiteSpace(userInfo.Password))
       {
-          _context = context;
-          _dbFunctionality  = new DbFunctionality(_context);
-          _verefication = new VereficationFunctionality();
+        return BadRequest(new { status = "error", error = "empty data" });
       }
 
-      [HttpPost("login")]
-      public async Task<IActionResult> Login([FromBody] UserLoginInfo userLoginInfo)
+      var user = _dbFunctionality.FindUserByUsernameAndPassword(userInfo.Username, userInfo.Password);
+
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
+
+      UserDto userDto = new UserDto()
       {
-          if (string.IsNullOrWhiteSpace(userLoginInfo.Username) || string.IsNullOrWhiteSpace(userLoginInfo.Password))
-          {
-            return BadRequest(new { status = "error", error = "empty data" });
-          }
+        UserID = user.UserID,
+        Username = user.Username,
+        Email = user.Email,
+        SessionToken = user.SessionToken,
+        UserProfilePicturePath = user.UserProfilePicturePath
+      };
+      return Ok(new { status = "success", data = new { user = userDto } });
+    }
 
-          var user = _dbFunctionality.FindUserByUsernameAndPassword(userLoginInfo.Username, userLoginInfo.Password);
-
-          var verificationResult = await _verefication.UserVerefication(user);
-          if (verificationResult != null)
-            return verificationResult;
-
-          return Ok(new { status = "success", data = new { user } });
-      }
-
-      [HttpPost("token")]
-      public async Task<IActionResult> Token([FromBody] UserTokenInfo userTokenInfo)
+    [HttpPost("token")]
+    public async Task<IActionResult> Token([FromBody] UserTokenLoginRequestDto userInfo)
+    {
+      if (string.IsNullOrWhiteSpace(userInfo.SessionToken))
       {
-        if (string.IsNullOrWhiteSpace(userTokenInfo.SessionToken))
-        {
-          return BadRequest(new { status = "error", error = "empty data" });
-        }
+        return BadRequest(new { status = "error", error = "empty data" });
+      }
 
-        var user = _dbFunctionality.FindUserByToken(userTokenInfo.SessionToken);
+      var user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
 
-        var verificationResult = await _verefication.UserVerefication(user);
-        if (verificationResult != null)
-          return verificationResult;
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
-        if (user.SessionTokenExpirationDate < DateTime.Now){
-          _dbFunctionality.CreateNewSessionToken(user);
-        }
-        return Ok(new { status = "success", data = new { user } });
+      if (user.SessionTokenExpirationDate < DateTime.Now){
+        _dbFunctionality.CreateNewSessionToken(user);
       }
-      [HttpPost("register")]
-      public async Task<IActionResult> Register([FromBody] NewUserInfo newUserInfo){
-        if (string.IsNullOrWhiteSpace(newUserInfo.Username) ||
-            string.IsNullOrWhiteSpace(newUserInfo.Password) ||
-            string.IsNullOrWhiteSpace(newUserInfo.Email))
-        {
-          return BadRequest(new { status = "error",
-              error = "Username, password, and email must not be empty." });
-        }
-        if(_dbFunctionality.FindUserByUsername(newUserInfo.Username) != null){
-          return Conflict(new {status = "error",
-              error = "A user with this username already exists."});
-        }
+      UserDto userDto = new UserDto()
+      {
+        UserID = user.UserID,
+        Username = user.Username,
+        Email = user.Email,
+        SessionToken = user.SessionToken,
+        UserProfilePicturePath = user.UserProfilePicturePath
+      };
+      return Ok(new { status = "success", data = new { user = userDto } });
+    }
 
-        User user = _dbFunctionality.CreateUser(newUserInfo.Username, newUserInfo.Password, newUserInfo.Email);
-        return Ok(new { status = "success", data = new { user = user } });
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] UserRegistrationRequestDto userInfo){
+      if (string.IsNullOrWhiteSpace(userInfo.Username) ||
+          string.IsNullOrWhiteSpace(userInfo.Password) ||
+          string.IsNullOrWhiteSpace(userInfo.Email))
+      {
+        return BadRequest(new { status = "error",
+            error = "Username, password, and email must not be empty." });
       }
-      public class UserTokenInfo{
-        public string SessionToken {get; set;}
+      if(_dbFunctionality.FindUserByUsername(userInfo.Username) != null){
+        return Conflict(new {status = "error",
+            error = "A user with this username already exists."});
       }
-      public class UserLoginInfo{
-        public string Username {get; set;}
-        public string Password {get; set;}
-      }
-      public class NewUserInfo{
-        public string Username {get; set;}
-        public string Password {get;set;}
-        public string Email {get; set;}
-      }
+
+      User user = _dbFunctionality.CreateUser(userInfo.Username, userInfo.Password, userInfo.Email);
+      UserDto userDto = new UserDto()
+      {
+        UserID = user.UserID,
+        Username = user.Username,
+        Email = user.Email,
+        SessionToken = user.SessionToken,
+        UserProfilePicturePath = user.UserProfilePicturePath
+      };
+      return Ok(new { status = "success", data = new { user = userDto } });
+    }
   }
 }

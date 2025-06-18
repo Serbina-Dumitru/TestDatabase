@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
+using TestDatabase.Dtos.RequestDtos;
+using TestDatabase.Dtos.ResponseDtos;
+using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
 {
@@ -10,93 +13,66 @@ namespace TestDatabase.Controllers
   public class UserController : ControllerBase
   {
     private readonly Context _context;
+    private DbFunctionality _dbFunctionality;
+    private VereficationFunctionality _verefication;
     public UserController(Context context)
     {
       _context = context;
+      _dbFunctionality = new DbFunctionality(_context);
+      _verefication = new VereficationFunctionality();
     }
 
-    [HttpPost("delete-user")]
-    public async Task<IActionResult> DeleteUser([FromBody] UserTokenInfo userToken){
-      if (string.IsNullOrWhiteSpace(userToken.SessionToken))
-      {
+    [HttpDelete("delete-user")]
+    public async Task<IActionResult> DeleteUser([FromBody] UserDeleteRequestDto userToken){
+      if (string.IsNullOrWhiteSpace(userToken.SessionToken)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      var user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userToken.SessionToken);
 
-      if (user == null)
-      {
-        return Unauthorized(new { status = "error", error = "user not found" });
-      }
+      User user = _dbFunctionality.FindUserByToken(userToken.SessionToken);
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
-
-      user.IsAccountDeleted = true;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to delete your account."});
-      }
-      user.Username = $"Deleted-Account-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-      await _context.SaveChangesAsync();
-
-      return Ok(new {status = "success",data = new {user = user}});
+      user = _dbFunctionality.DeleteUser(user);
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
+      return Ok(new { status = "success", data = new { user = userDto } });
     }
 
-    [HttpPost("change-user-name")]
-    public async Task<IActionResult> ChangeUserName([FromBody] UserTokenAndUserName userInfo){
+    [HttpPut("change-user-name")]
+    public async Task<IActionResult> ChangeUserName([FromBody] UserChangeUsernameRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
-          string.IsNullOrWhiteSpace(userInfo.NewUserName)   )
-      {
+          string.IsNullOrWhiteSpace(userInfo.NewUserName)   ){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
 
-      if (user == null)
-      {
-        return Unauthorized(new { status = "error", error = "user not found" });
-      }
+      User user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
-
-      User? existingUser = await _context.Users
-        .FirstOrDefaultAsync(u => u.Username == userInfo.NewUserName);
+      User? existingUser = _dbFunctionality.FindUserByUsername(userInfo.NewUserName);
       if(existingUser != null){
         return Conflict(new{status = "error",error="User with that username already exists."});
       }
 
-      user.Username = userInfo.NewUserName;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your user name."});
-      }
-
-      return Ok(new {status = "success",data = new {user = user}});
+      user = _dbFunctionality.ChangeUsername(user, userInfo.NewUserName);
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
+      return Ok(new { status = "success", data = new { user = userDto } });
     }
 
-    [HttpPost("change-user-password")]
-    public async Task<IActionResult> ChangeUserPassword([FromBody] UserTokenAndUserPassword userInfo){
+    [HttpPut("change-user-password")]
+    public async Task<IActionResult> ChangeUserPassword([FromBody] UserChangePasswordRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
-          string.IsNullOrWhiteSpace(userInfo.NewPassword))
-      {
+          string.IsNullOrWhiteSpace(userInfo.NewPassword)){
         return BadRequest(new { status = "error", error = "empty data" });
       }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
 
-      if (user == null) {
-        return Unauthorized(new { status = "error", error = "user not found" });
-      }
+      User user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
+      var verificationResult = await _verefication.UserVerefication(user);
+      if (verificationResult != null)
+        return verificationResult;
 
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
-
-      if(userInfo.NewPassword.Count() < 8){
+      if (userInfo.NewPassword.Count() < 8){
         return BadRequest(new {status = "error", error = "The password should be at least 8 characters."});
       }
       if(!userInfo.NewPassword.Any(c => char.IsUpper(c))){
@@ -105,65 +81,12 @@ namespace TestDatabase.Controllers
       if(!userInfo.NewPassword.Any(c => char.IsDigit(c))){
         return BadRequest(new {status ="error", error = "The password should contain at least one digit."});
       }
-      //if(!userInfo.NewPassword.Any(c => char.IsSymbol(c))){
-      //  return BadRequest(new {status ="error", error = "The password should contain at least one symbol."});
-      //}
 
+      user = _dbFunctionality.ChangeUserPassword(user, userInfo.NewPassword);
 
-      user.Password = userInfo.NewPassword;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your password."});
-      }
+      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
+      return Ok(new { status = "success", data = new { user = userDto } });
 
-      return Ok(new {status = "success",data = new {user = user}});
-
-    }
-    [HttpPost("change-user-email")]
-    public async Task<IActionResult> ChangeUserEmail([FromBody] UserTokenAndUserEmail userInfo){
-      if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
-          string.IsNullOrWhiteSpace(userInfo.NewEmail))
-      {
-        return BadRequest(new { status = "error", error = "empty data" });
-      }
-      User? user = await _context.Users
-        .FirstOrDefaultAsync(u => u.SessionToken == userInfo.SessionToken);
-
-      if (user == null) {
-        return Unauthorized(new { status = "error", error = "user not found" });
-      }
-
-      if(user.IsAccountDeleted){
-        return StatusCode(403, new {status = "error", error = "The account has been deleted, you can not further alter or use it."});
-      }
-
-      if(!new EmailAddressAttribute().IsValid(userInfo.NewEmail)){
-        return BadRequest(new {status = "error", error = "The provided email is invalid."});
-      }
-
-      user.Email = userInfo.NewEmail;
-      int HowMuchIsWritten = await _context.SaveChangesAsync();
-      if(HowMuchIsWritten == 0){
-        return StatusCode(500,new{status="error",error="The server was unable to change your email."});
-      }
-
-      return Ok(new {status = "success",data = new {user = user}});
-    }
-
-    public class UserTokenInfo{
-      public string SessionToken {get; set;}
-    }
-    public class UserTokenAndUserName {
-      public string SessionToken {get; set;}
-      public string NewUserName {get; set;}
-    }
-    public class UserTokenAndUserPassword {
-      public string SessionToken {get; set;}
-      public string NewPassword {get; set;}
-    }
-    public class UserTokenAndUserEmail {
-      public string SessionToken {get; set;}
-      public string NewEmail {get; set;}
     }
   }
 }

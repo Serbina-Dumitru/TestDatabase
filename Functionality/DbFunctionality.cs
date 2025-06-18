@@ -1,102 +1,308 @@
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using TestDatabase;
+using TestDatabase.Dtos;
+using TestDatabase.Dtos.ResponseDtos;
 
-namespace DbFunctionality
+namespace TestDatabase.Functionality
 {
-  class DbFunctionalityClass
+  class DbFunctionality
   {
-    public static void QuerryAllDbNames()
+    public Random random;
+    private readonly Context _context;
+    public DbFunctionality(Context context)
     {
-      using (var _context = new Context())
-      {
-        _context.Users.ToList();
-        _context.Messages.ToList();
-        _context.Chat.ToList();
-        _context.UsersInChat.ToList();
-        _context.Notifications.ToList();
-        _context.Notifications.ToList();
-        var allData = _context.ChangeTracker.Entries().Select(e => e.Entity).ToList();
-        allData.ForEach(e => Console.WriteLine(e));
-      }
+      _context = context;
+      random = new Random();
     }
-    public static void PrintAllTheDb()
+
+    //User
+    public User FindUserByToken(string token){
+        return _context.Users.FirstOrDefault(u => u.SessionToken == token);
+    }
+    public User FindUserByUsernameAndPassword(string username, string password){
+      return _context.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+    }
+    public User FindUserByUsername(string username){
+      return _context.Users.FirstOrDefault(u => u.Username == username);
+    }
+
+    public User CreateUser(string username, string password){
+      User user = new User(){
+          Username = username,
+          Password = password,
+          IsOnline = false,
+          SessionToken = username+random.Next(100000, 999999),
+          SessionTokenExpirationDate = DateTime.Now.AddDays(30),
+          UserProfilePicturePath = "./test"
+        };
+        _context.Users.Add(user);
+        _context.SaveChanges();
+        return user;
+    }
+
+    public User CreateNewSessionToken(User user){
+      user.SessionToken = user.Username+random.Next(1000, 9999);
+      user.SessionTokenExpirationDate = DateTime.Now.AddDays(30);
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+
+    public User DeleteUser(User user){
+      user.IsAccountDeleted = true;
+      user.Username = $"Deleted-Account-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+
+    public User ChangeUsername(User user, string newUserName){
+      user.Username = newUserName;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+    public User ChangeUserPassword(User user, string newPassword){
+      user.Password = newPassword;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+      return user;
+    }
+
+    public UserDto ConvertUserToUserDto(User user)
     {
-      Console.WriteLine();
-      using (var _context = new Context())
+      return new UserDto()
       {
-        Console.WriteLine("Users:");
-        var users = _context.Users
-          .Include(u => u.SentMessages)
-          .Include(u => u.Notifications)
-          .Include(u => u.UsersInChats).ThenInclude(uc => uc.Chat)
-          .Include(u => u.Contacts).ThenInclude(c => c.ContactUser)
-          .Include(u => u.ContactedBy)
-          .ToList();
-        foreach (var user in users)
-        {
-          Console.WriteLine($"User: {user.UserID}, {user.Username}, {user.Email}");
-          Console.WriteLine($"  Sent Messages: {user.SentMessages?.Count}");
-          Console.WriteLine($"  Notifications: {user.Notifications?.Count}");
-          Console.WriteLine($"  Chats: {string.Join(", ", user.UsersInChats?.Select(uc => uc.Chat.ChatName) ?? Enumerable.Empty<string>())}");
-          Console.WriteLine($"  Contacts: {string.Join(", ", user.Contacts?.Select(c => c.ContactUser.Username) ?? Enumerable.Empty<string>())}");
-        }
+        UserID = user.UserID,
+        Username = user.Username,
+        SessionToken = user.SessionToken,
+        UserProfilePicturePath = user.UserProfilePicturePath
+      };
+    }
 
-        // Print Chats
-        Console.WriteLine("\nChats:");
-        var chats = _context.Chat
-          .Include(c => c.Messages).ThenInclude(m => m.Sender)
-          .Include(c => c.ChatMembers).ThenInclude(cm => cm.User)
-          .ToList();
-        foreach (var chat in chats)
-        {
-          Console.WriteLine($"Chat: {chat.ChatID}, {chat.ChatName}");
-          Console.WriteLine($"  Messages: {chat.Messages?.Count}");
-          Console.WriteLine($"  Members: {string.Join(", ", chat.ChatMembers?.Select(cm => cm.User.Username) ?? Enumerable.Empty<string>())}");
-        }
+    public void UpdateUserOnlineStatus(User user)
+    {
+      user.LastTimeOnline = DateTime.Now;
+      user.IsOnline = true;
+      _context.Users.Update(user);
+      _context.SaveChanges();
+    }
 
-        // Print Messages
-        Console.WriteLine("\nMessages:");
-        var messages = _context.Messages
-          .Include(m => m.Sender)
-          .Include(m => m.Chat)
-          .ToList();
-        foreach (var message in messages)
+    //Message
+    public List<MessageToClientDto> FindLastNMessagesInChat(string ChatID)
+    {
+      return _context.Messages
+        .Where(m => m.ChatID == int.Parse(ChatID) && !m.IsDeleted)
+        .OrderByDescending(m => m.TimeStamp)
+        .Take(50)
+        .OrderBy(m => m.TimeStamp)
+         .Select(m => new MessageToClientDto
+         {
+           MessageID = m.MessageID,
+           Content = m.Content,
+           TimeStamp = m.TimeStamp,
+           Sender = new SenderDto
+           {
+             UserID = m.Sender.UserID,
+             Username = m.Sender.Username,
+             UserProfilePicturePath = m.Sender.UserProfilePicturePath
+           }
+         })
+        .ToList();
+    }
+    public List<MessageToClientDto> FindNewMessagesInChat(User user)
+    {
+      return _context.Messages
+        .Where(m => m.TimeStamp > DateTime.Now.AddSeconds(-2) && m.Sender.UserID != user.UserID && !m.IsDeleted)
+        .Select(m => new MessageToClientDto
         {
-          Console.WriteLine($"Message: {message.MessageID}, Chat: {message.Chat.ChatName}, Sender: {message.Sender.Username}, Content: {message.Content}");
-        }
+          MessageID = m.MessageID,
+          Content = m.Content,
+          TimeStamp = m.TimeStamp,
+          Sender = new SenderDto
+          {
+            UserID = m.Sender.UserID,
+            Username = m.Sender.Username,
+            UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+        .ToList();
+    }
 
-        // Print Contacts
-        Console.WriteLine("\nContacts:");
-        var contacts = _context.Contact
-          .Include(c => c.User)
-          .Include(c => c.ContactUser)
-          .ToList();
-        foreach (var contact in contacts)
-        {
-          Console.WriteLine($"Contact: {contact.User.Username} -> {contact.ContactUser.Username}");
-        }
+    public Message FindMessageById(string messageID)
+    {
+      return _context.Messages.FirstOrDefault(m => m.MessageID == int.Parse(messageID));
+    }
 
-        // Print Notifications
-        Console.WriteLine("\nNotifications:");
-        var notifications = _context.Notifications
-          .Include(n => n.User)
-          .ToList();
-        foreach (var notification in notifications)
-        {
-          Console.WriteLine($"Notification: {notification.NotificationID}, User: {notification.User.Username}, Content: {notification.Content}");
-        }
+    public Message CreateMessage(int UserID, string Content, string ChatID)
+    {
+      Message message = new Message
+      {
+        UserID = UserID,
+        Content = Content,
+        TimeStamp = DateTime.Now,
+        ChatID = int.Parse(ChatID)
+      };
+      _context.Messages.AddAsync(message);
+      _context.SaveChanges();
+      return message;
+    }
 
-        // Print UsersInChats
-        Console.WriteLine("\nUsersInChats:");
-        var usersInChats = _context.UsersInChat
-          .Include(uc => uc.User)
-          .Include(uc => uc.Chat)
-          .ToList();
-        foreach (var uc in usersInChats)
+    public void DeleteMessage(string messageID)
+    {
+      Message message = FindMessageById(messageID);
+      message.IsDeleted = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+    }
+
+    public void EditMessage(string messageId, string content)
+    {
+      Message message = FindMessageById(messageId);
+      message.Content = content;
+      message.IsModified = true;
+      _context.Messages.Update(message);
+      _context.SaveChanges();
+    }
+
+    public List<int> FindDeletedMessages(string chatId)
+    {
+      return _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsDeleted).Select(m => m.MessageID).ToList();
+    }
+
+    public List<MessageToClientDto> FindEditedMessages(string chatId)
+    {
+      return _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsModified)
+        .Select(m => new MessageToClientDto
         {
-          Console.WriteLine($"UsersInChat: User: {uc.User.Username}, Chat: {uc.Chat.ChatName}");
-        }
-      }
+          MessageID = m.MessageID,
+          Content = m.Content,
+          TimeStamp = m.TimeStamp,
+          Sender = new SenderDto
+          {
+            UserID = m.Sender.UserID,
+            Username = m.Sender.Username,
+            UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+          .ToList();
+    }
+
+    public MessageToClientDto ConvertMessageToMessageToClientDto(Message message)
+    {
+      return new MessageToClientDto()
+      {
+        MessageID = message.MessageID,
+        Content = message.Content,
+        TimeStamp = message.TimeStamp,
+        Sender = ConvertToSenderDto(message.Sender)
+      };
+    }
+
+
+    public SenderDto ConvertToSenderDto(User sender)
+    {
+      return new SenderDto()
+      {
+        UserID = sender.UserID,
+        Username = sender.Username,
+        UserProfilePicturePath = sender.UserProfilePicturePath
+      };
+    }
+
+    //Chat
+    public Chat FindChatById(string id){
+      return _context.Chat.FirstOrDefault(c => c.ChatID == int.Parse(id));
+    }
+    public UsersInChat FindUserInChat(Chat chat, User user){
+      return _context.UsersInChat.FirstOrDefault(uc => uc.ChatID == chat.ChatID && uc.UserID == user.UserID);
+    }
+    public List<ChatDto> FindAllChatsWithThisUser(User user){
+      return _context.UsersInChat.Include(us => us.Chat).Include(c => c.Chat.Messages)
+        .Where(us => us.UserID == user.UserID && !us.Chat.IsChatDeleted)
+        .Select(c => new ChatDto
+        {
+          ChatID = c.ChatID,
+          ChatName = c.Chat.ChatName,
+          LastMessage = c.Chat.Messages
+          .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new MessageToClientDto
+            {
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              Sender = new SenderDto
+              {
+                UserID = m.Sender.UserID,
+                Username = m.Sender.Username,
+                UserProfilePicturePath = m.Sender.UserProfilePicturePath
+              }
+            })
+          .FirstOrDefault()
+        })
+        .ToList();
+    }
+
+    public List<ChatDto> FindAllChatsWithOfflineMessages(User user)
+    {
+      return _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
+        .Where(c =>
+          c.ChatMembers.Any(cm => cm.UserID == user.UserID) &&
+          c.Messages.Any(m => m.TimeStamp > user.LastTimeOnline))
+        .Select(c => new ChatDto
+        {
+          ChatID = c.ChatID,
+          ChatName = c.ChatName,
+          LastMessage = c.Messages
+            .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new MessageToClientDto
+            {
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              Sender = new SenderDto
+              {
+                UserID = m.Sender.UserID,
+                Username = m.Sender.Username,
+                UserProfilePicturePath = m.Sender.UserProfilePicturePath
+              }
+            })
+          .FirstOrDefault()
+        })
+        .ToList();
+    }
+
+    public Chat CreateChat(string chatName){
+      Chat chat = new Chat{
+        ChatName = chatName,
+      };
+      _context.Chat.Add(chat);
+      _context.SaveChanges();
+
+      return chat;
+    }
+
+    public UsersInChat AddUserToChat(Chat chat, User user){
+      UsersInChat usersInChat = new UsersInChat{
+        ChatID = chat.ChatID,
+        UserID = user.UserID
+      };
+      _context.UsersInChat.Add(usersInChat);
+      _context.SaveChanges();
+      return usersInChat;
+    }
+
+    public Chat DeleteChat(Chat chat){
+      chat.IsChatDeleted = true;
+      _context.Chat.Update(chat);
+      _context.SaveChanges();
+      return chat;
+    }
+
+    public Chat UpdateChatName(Chat chat, string newChatName){
+      chat.ChatName = newChatName;
+      _context.Chat.Update(chat);
+      _context.SaveChanges();
+      return chat;
     }
   }
 }

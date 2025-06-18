@@ -88,26 +88,5 @@ namespace TestDatabase.Controllers
       return Ok(new { status = "success", data = new { user = userDto } });
 
     }
-    [HttpPut("change-user-email")]
-    public async Task<IActionResult> ChangeUserEmail([FromBody] UserChangeEmailRequestDto userInfo){
-      if (string.IsNullOrWhiteSpace(userInfo.SessionToken) ||
-          string.IsNullOrWhiteSpace(userInfo.NewEmail)){
-        return BadRequest(new { status = "error", error = "empty data" });
-      }
-
-      User user = _dbFunctionality.FindUserByToken(userInfo.SessionToken);
-      var verificationResult = await _verefication.UserVerefication(user);
-      if (verificationResult != null)
-        return verificationResult;
-
-      if (!new EmailAddressAttribute().IsValid(userInfo.NewEmail)){
-        return BadRequest(new {status = "error", error = "The provided email is invalid."});
-      }
-
-      user = _dbFunctionality.ChangeUserEmail(user, userInfo.NewEmail);
-
-      UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
-      return Ok(new { status = "success", data = new { user = userDto } });
-    }
   }
 }

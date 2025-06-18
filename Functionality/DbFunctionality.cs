@@ -27,11 +27,10 @@ namespace TestDatabase.Functionality
       return _context.Users.FirstOrDefault(u => u.Username == username);
     }
 
-    public User CreateUser(string username, string password, string email){
+    public User CreateUser(string username, string password){
       User user = new User(){
           Username = username,
           Password = password,
-          Email = email,
           IsOnline = false,
           SessionToken = username+random.Next(100000, 999999),
           SessionTokenExpirationDate = DateTime.Now.AddDays(30),
@@ -70,12 +69,6 @@ namespace TestDatabase.Functionality
       _context.SaveChanges();
       return user;
     }
-    public User ChangeUserEmail(User user, string newEmail){
-      user.Email = newEmail;
-      _context.Users.Update(user);
-      _context.SaveChanges();
-      return user;
-    }
 
     public UserDto ConvertUserToUserDto(User user)
     {
@@ -83,7 +76,6 @@ namespace TestDatabase.Functionality
       {
         UserID = user.UserID,
         Username = user.Username,
-        Email = user.Email,
         SessionToken = user.SessionToken,
         UserProfilePicturePath = user.UserProfilePicturePath
       };
@@ -181,18 +173,20 @@ namespace TestDatabase.Functionality
 
     public List<MessageToClientDto> FindEditedMessages(string chatId)
     {
-      List<Message> updatedMessages = _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsModified)
-       .ToList();
-
-      List<MessageToClientDto> messages = new List<MessageToClientDto>();
-      foreach (var message in updatedMessages)
-      {
-        message.IsModified = false;
-        _context.Messages.Update(message);
-        messages.Add(ConvertMessageToMessageToClientDto(message));
-      }
-      _context.SaveChanges();
-      return messages;
+      return _context.Messages.Where(m => m.ChatID == int.Parse(chatId) && m.IsModified)
+        .Select(m => new MessageToClientDto
+        {
+          MessageID = m.MessageID,
+          Content = m.Content,
+          TimeStamp = m.TimeStamp,
+          Sender = new SenderDto
+          {
+            UserID = m.Sender.UserID,
+            Username = m.Sender.Username,
+            UserProfilePicturePath = m.Sender.UserProfilePicturePath
+          }
+        })
+          .ToList();
     }
 
     public MessageToClientDto ConvertMessageToMessageToClientDto(Message message)
@@ -283,6 +277,7 @@ namespace TestDatabase.Functionality
       };
       _context.Chat.Add(chat);
       _context.SaveChanges();
+
       return chat;
     }
 

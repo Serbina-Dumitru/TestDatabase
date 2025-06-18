@@ -63,8 +63,7 @@ namespace TestDatabase.Controllers
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegistrationRequestDto userInfo){
       if (string.IsNullOrWhiteSpace(userInfo.Username) ||
-          string.IsNullOrWhiteSpace(userInfo.Password) ||
-          string.IsNullOrWhiteSpace(userInfo.Email))
+          string.IsNullOrWhiteSpace(userInfo.Password))
       {
         return BadRequest(new { status = "error",
             error = "Username, password, and email must not be empty." });
@@ -74,7 +73,7 @@ namespace TestDatabase.Controllers
             error = "A user with this username already exists."});
       }
 
-      User user = _dbFunctionality.CreateUser(userInfo.Username, userInfo.Password, userInfo.Email);
+      User user = _dbFunctionality.CreateUser(userInfo.Username, userInfo.Password);
       UserDto userDto = _dbFunctionality.ConvertUserToUserDto(user);
       return Ok(new { status = "success", data = new { user = userDto } });
     }

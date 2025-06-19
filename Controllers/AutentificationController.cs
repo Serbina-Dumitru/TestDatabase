@@ -66,11 +66,28 @@ namespace TestDatabase.Controllers
           string.IsNullOrWhiteSpace(userInfo.Password))
       {
         return BadRequest(new { status = "error",
-            error = "Username, password, and email must not be empty." });
+            error = "Username and password must not be empty." });
       }
       if(_dbFunctionality.FindUserByUsername(userInfo.Username) != null){
         return Conflict(new {status = "error",
             error = "A user with this username already exists."});
+      }
+
+      if (userInfo.Password.Count() < 8)
+      {
+        return BadRequest(new { status = "error", error = "The password should be at least 8 characters." });
+      }
+      if (!userInfo.Password.Any(c => char.IsUpper(c)))
+      {
+        return BadRequest(new { status = "error", error = "The password should contain at least one upercase letter." });
+      }
+      if (!userInfo.Password.Any(c => char.IsLower(c)))
+      {
+        return BadRequest(new { status = "error", error = "The password should contain at least one lowscare letter." });
+      }
+      if (!userInfo.Password.Any(c => char.IsDigit(c)))
+      {
+        return BadRequest(new { status = "error", error = "The password should contain at least one digit." });
       }
 
       User user = _dbFunctionality.CreateUser(userInfo.Username, userInfo.Password);

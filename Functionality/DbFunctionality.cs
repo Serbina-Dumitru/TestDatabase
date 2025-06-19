@@ -280,7 +280,30 @@ namespace TestDatabase.Functionality
 
       return chat;
     }
-
+    public ChatDto ChatToDto(Chat chat)
+    {
+      return _context.Chat.Include(c => c.ChatMembers).Include(c => c.Messages)
+        .Where(c => c.ChatID == chat.ChatID)
+        .Select(c => new ChatDto
+        {
+          ChatID = c.ChatID,
+          ChatName = c.ChatName,
+          LastMessage = c.Messages
+            .OrderByDescending(m => m.TimeStamp)
+            .Select(m => new MessageToClientDto
+            {
+              Content = m.Content,
+              TimeStamp = m.TimeStamp,
+              Sender = new SenderDto
+              {
+                UserID = m.Sender.UserID,
+                Username = m.Sender.Username,
+                UserProfilePicturePath = m.Sender.UserProfilePicturePath
+              }
+            })
+          .FirstOrDefault()
+        }).FirstOrDefault();
+    }
     public UsersInChat AddUserToChat(Chat chat, User user){
       UsersInChat usersInChat = new UsersInChat{
         ChatID = chat.ChatID,

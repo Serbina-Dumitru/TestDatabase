@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TestDatabase.Dtos.RequestDtos;
+using TestDatabase.Dtos.ResponseDtos;
 using TestDatabase.Functionality;
 
 namespace TestDatabase.Controllers
@@ -33,7 +34,8 @@ namespace TestDatabase.Controllers
 
       Chat chat = _dbFunctionality.CreateChat(chatInfoType1.ChatName);
       UsersInChat usersInChat = _dbFunctionality.AddUserToChat(chat, user);
-      return Ok( new {status = "success", data = chat});
+      ChatDto chatDto = _dbFunctionality.ChatToDto(chat);
+      return Ok( new {status = "success", data = chatDto });
     }
 
     [HttpPost("add-user-in-chat")]
@@ -115,7 +117,8 @@ namespace TestDatabase.Controllers
       }
 
       chat = _dbFunctionality.DeleteChat(chat);
-      return Ok(new {status = "success",data = chat});
+      ChatDto chatDto = _dbFunctionality.ChatToDto(chat);
+      return Ok(new {status = "success",data = chatDto });
     }
 
     [HttpPut("update-chat")]
@@ -144,7 +147,8 @@ namespace TestDatabase.Controllers
       }
 
       chat = _dbFunctionality.UpdateChatName(chat, chatInfo.ChatName);
-      return Ok(new {status = "success",data = chat});
+      ChatDto chatDto = _dbFunctionality.ChatToDto(chat);
+      return Ok(new {status = "success",data = chatDto });
     }
   }
 }
